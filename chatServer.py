@@ -1,7 +1,7 @@
 import socket, sys, select
 
-# from classes.py import User, Room, Lobby
-# import classes.py
+from classes.py import User, Room, Lobby
+import classes.py
 
 PORT = 54543 
 MAXCLIENTS = 25 
@@ -26,8 +26,8 @@ print("Server set up & listening! Connect with address: " , hostAddr)
 connectionList = [s]  # create a list of users, starting w/ host 
 
 while True:  # always listening for connections & messages 
-	readUsers, writeUsers, errorUsers = select.select(connectionList, [], []) 
-	for user in readUsers:  # loop through users 
+	readables, writables, exceptionals = select.select(connectionList, [], []) 
+	for user in readables:  # loop through users 
 		if user is s:  # if user is a socket, new connection
 			newSocket, addr = user.accept()
 			newUser = User(newSocket, "")
@@ -38,3 +38,14 @@ while True:  # always listening for connections & messages
 			if newMsg == 0 :  # message contents are empty 
 				user.socket.close() 
 				connection_list.remove(user)
+			else:
+				processMsg(user, msg.decode().lower())  #send to process 
+	
+	for user in errorUsers:  #error sockets 
+		user.close()
+		connectionList.remove(user)
+
+
+def processMsg(User, msg) {
+
+}

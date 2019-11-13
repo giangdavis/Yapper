@@ -37,4 +37,7 @@ class Lobby:
 		self.roomUsers = {}  #dict contain users & rooms they're in. {user : room name} 
 
 	def welcomeMsg(self, user):
-		user.socket.sendall("Welcome to ____\n Enter a username: ")
+		user.socket.sendall("Welcome to the lobby, \n Enter a username: ")
+
+	def processMsg(self, user, msg): 
+		 
