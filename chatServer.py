@@ -25,9 +25,9 @@ print("Server set up & listening! Connect with address: " , hostAddr)
 
 connectionList = [s]  # create a list of users, starting w/ host 
 
-while True:  # always listening for connections & messages 
+'''while True:  # always listening for connections & messages 
 	readables, writables, exceptionals = select.select(connectionList, [], []) 
-	for user in readables:  # loop through users 
+	for user in readables:  # loop through users, handling inputs 
 		if user is s:  # if user is a socket, new connection
 			newSocket, addr = user.accept()
 			newUser = User(newSocket, "")
@@ -47,5 +47,19 @@ while True:  # always listening for connections & messages
 
 
 def processMsg(User, msg) {
+	# create a room 
 
+	# list rooms 
+
+	# join a room 
+
+	# message to room 
+
+	# list members of a room 
+
+	# send a message to multiple rooms, should have to be done in the lobby 
+
+	# disconnect from the server 
 }
+
+'''
