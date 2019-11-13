@@ -1,11 +1,7 @@
 import socket, sys, select
 
-from classes.py import User, Room, Lobby
-import classes.py
-
-PORT = 54543 
-MAXCLIENTS = 25 
-READBUFFERSIZE = 4096
+from chatClasses import User, Room, Lobby
+import chatClasses
 
 # get the host IP address and start listening for connections
 
@@ -13,53 +9,55 @@ arguments = len(sys.argv) - 1
 if arguments == 1: 
 	hostAddr = sys.argv[1]
 else: 
-	hostAddr = ''
+	hostAddr = '127.0.0.1'  #if no argument, default to local host 
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # create a socket object s 
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # set the socket option, to continually listen. see doc 
-s.setblocking(0)  # turns off socket blocking
-s.bind((hostAddr, PORT))  # assigns host ip add and port to socket  
-s.listen(MAXCLIENTS)  
+s.setblocking(False)  # turns off socket blocking
+s.bind((hostAddr, chatClasses.PORT))  # assigns host ip add and port to socket  
+# s.bind((socket.gethostname(), chatClasses.PORT)) # make it available to the outside world Test this w/ Erik Device ! 
+s.listen(chatClasses.MAX_CLIENTS) 
+# s = Server(hostAddr, chatClasses.PORT)
 
 print("Server set up & listening! Connect with address: " , hostAddr)
 
-connectionList = [s]  # create a list of users, starting w/ host 
+chatClasses.SERVERSOCKETLIST.append(s) 
 
-'''while True:  # always listening for connections & messages 
-	readables, writables, exceptionals = select.select(connectionList, [], []) 
-	for user in readables:  # loop through users, handling inputs 
-		if user is s:  # if user is a socket, new connection
-			newSocket, addr = user.accept()
+lobby = Lobby() 
+
+while 1:  
+	readables, writables, exceptionals = select.select(chatClasses.SERVERSOCKETLIST, [], [])
+	for socket in readables:
+		if socket is s:  # if theres info coming from the host server, its a new socket trying to connect.. 
+			newSocket, addr = socket.accept()
 			newUser = User(newSocket, "")
-			connectionList.append(newUser)
+			# newUser.fileno()
+			chatClasses.SERVERSOCKETLIST.append(newSocket)
+			# clients.append(newUser)
+			lobby.promptForName(newUser)
 
-		else:  # new messages 
-			newMsg = user.socket.recv(READBUFFERSIZE) 
-			if newMsg == 0 :  # message contents are empty 
-				user.socket.close() 
-				connection_list.remove(user)
-			else:
-				processMsg(user, msg.decode().lower())  #send to process 
-	
-	for user in errorUsers:  #error sockets 
-		user.close()
-		connectionList.remove(user)
+# message handling not work ing ! 
+		else: 
+			try: 
+				newMsg = socket.recv(chatClasses.MAX_MESSAGE_LENGTH)
+				if newMsg: 
+					lobby.handle(socket, newMsg) 
+				else: # recv sent 0 bytes, closed connection 
+					if socket in chatClasses.SERVERSOCKETLIST: 
+						socket.close()
+						chatClasses.SERVERSOCKETLIST.remove(socket)
+
+				# broken connection 
+				print("connection to client is broken")
+				socket.close() 
+				chatClasses.SERVERSOCKETLIST.remove(socket)
+			except: 
+				print("connection to client is broken")
+				socket.close() 
+				chatClasses.SERVERSOCKETLIST.remove(socket)
 
 
-def processMsg(User, msg) {
-	# create a room 
 
-	# list rooms 
 
-	# join a room 
 
-	# message to room 
 
-	# list members of a room 
-
-	# send a message to multiple rooms, should have to be done in the lobby 
-
-	# disconnect from the server 
-}
-
-'''

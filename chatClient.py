@@ -4,17 +4,34 @@ import sys
 from chatClasses import User, Room, Lobby
 import chatClasses
 
-MAX_MESSAGE_LENGTH = 4096
-
 if len(sys.argv) < 2:
-    print("Run as follows: python3 chatClient.py hostname where hostname is an IP", file=sys.stderr)
+    print("Run as follows: python3 chatClient.py hostname (where hostname is an IP)")
+    exit()
 else:
     serverConnection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serverConnection.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    serverConnection.connect(sys.argv[1], chatClasses.PORT)
-   
-   
-   ''' 
-while True:
-    readables, _, exceptionals = 
-    '''
+    serverConnection.connect((sys.argv[1], chatClasses.PORT))
+
+print("Succesfully connected to the lobby!")
+
+connectionList = [sys.stdin, serverConnection] 
+
+while 1:
+    readables, _, _ = select.select(connectionList, [], []) 
+    for socket in readables: 
+        if socket is serverConnection: # new msg 
+            msg = socket.recv(chatClasses.MAX_MESSAGE_LENGTH) 
+            if msg: #incoming message
+                sys.stdout.write(msg.decode()) 
+                sys.stdout.flush() 
+            else: # msg contained 0 bytes, disconnected
+                print ('Connection closed!') 
+                serverConnection.close() 
+                sys.exit() 
+
+        else: # send a message from client 
+            newMsg = sys.stdin.read() 
+            serverConnection.sendAll(newMsg.encode()) 
+            sys.stdout.flush() 
+			#if the client socket is readable, sending a msg. broadcast
+			#to other clients. 
