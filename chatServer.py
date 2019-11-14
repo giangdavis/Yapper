@@ -48,9 +48,9 @@ while 1:
 						chatClasses.SERVERSOCKETLIST.remove(socket)
 
 				# broken connection 
-				print("connection to client is broken")
+				'''print("connection to client is broken")
 				socket.close() 
-				chatClasses.SERVERSOCKETLIST.remove(socket)
+				chatClasses.SERVERSOCKETLIST.remove(socket)'''
 			except: 
 				print("connection to client is broken")
 				socket.close() 

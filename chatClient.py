@@ -30,8 +30,9 @@ while 1:
                 sys.exit() 
 
         else: # send a message from client 
-            newMsg = sys.stdin.read() 
-            serverConnection.sendAll(newMsg.encode()) 
+            print("sending mesage now")
+            newMsg = sys.stdin.readline() 
+            serverConnection.sendall(newMsg.encode()) 
             sys.stdout.flush() 
 			#if the client socket is readable, sending a msg. broadcast
 			#to other clients. 

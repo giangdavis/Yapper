@@ -59,7 +59,7 @@ class Lobby:
 			# if socket != server socket 
 			try: 
 				msgToSend = user.name.encode() + msg   
-				socket.sendAll(msgToSend)  
+				socket.sendall(msgToSend)  
 			except: 
 				socket.close() 
 				if socket in SERVERSOCKETLIST: 
