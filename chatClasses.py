@@ -33,7 +33,6 @@ NAMECHANGE = "$name name [Changes username]\n"
 NEWROOM = "$Room roomname [Creates/Joins Room]\n"
 COMMANDS = "All available commands:\n" + NAMECHANGE + NEWROOM
 
-
 class User: 
 	def __init__(self, socket, name): 
 		socket.setblocking(0)  
@@ -61,8 +60,13 @@ class Room:
 
 	def printUsers(self): 
 		print("Users in room: " + self.name + " ") 
+		count=0
 		for x in self.users: 
-			print(x.getName() + ' , ')
+			print(x.getName() + ' ')
+
+	def broadcast(self, msg): 
+		for x in self.users: 
+			x.socket.sendall(msg.encode())
 
 class Lobby: 
 	def __init__(self): 
@@ -100,7 +104,8 @@ class Lobby:
 						print("check2")
 						room.addUser(user)
 						room.printUsers()
-						# add code : broadcast to room members : user has joined 
+						welcome = user.name +  ":has joined the room!"
+						room.broadcast(welcome)
 				else: # new room 
 					newRoom = Room(roomName, user.getName()) 
 					newRoom.addUser(user) 
