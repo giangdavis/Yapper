@@ -12,16 +12,18 @@ else:
     serverConnection.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     serverConnection.connect((sys.argv[1], chatClasses.PORT))
 
-print("Succesfully connected to the lobby!")
-
 connectionList = [sys.stdin, serverConnection] 
-
+first = False 
 while 1:
     readables, _, _ = select.select(connectionList, [], []) 
-    for socket in readables: 
-        if socket is serverConnection: # new msg 
-            msg = socket.recv(chatClasses.MAX_MESSAGE_LENGTH) 
+    for notified_socket in readables: 
+        if notified_socket is serverConnection: # new msg 
+            msg = notified_socket.recv(chatClasses.MAX_MESSAGE_LENGTH) 
+            check = msg.decode() 
             if msg: #incoming message
+                if "You have successfully connected to the Lobby!!! What is your name?" in check: 
+                    print("condition met!")
+                    first = True
                 sys.stdout.write(msg.decode()) 
                 sys.stdout.flush() 
             else: # msg contained 0 bytes, disconnected
@@ -30,8 +32,11 @@ while 1:
                 sys.exit() 
 
         else: # send a message from client 
-            print("sending mesage now")
-            newMsg = sys.stdin.readline() 
+            if first == True:
+                newMsg = "$newuser " + sys.stdin.readline()
+                first = False
+            else:
+                newMsg = sys.stdin.readline()
             serverConnection.sendall(newMsg.encode()) 
             sys.stdout.flush() 
 			#if the client socket is readable, sending a msg. broadcast

@@ -25,39 +25,29 @@ chatClasses.SERVERSOCKETLIST.append(s)
 
 lobby = Lobby() 
 
-while 1:  
+while True:  
 	readables, writables, exceptionals = select.select(chatClasses.SERVERSOCKETLIST, [], [])
-	for socket in readables:
-		if socket is s:  # if theres info coming from the host server, its a new socket trying to connect.. 
-			newSocket, addr = socket.accept()
+	for notified_socket in readables:
+		if notified_socket is s:  # new connection
+			newSocket, addr = notified_socket.accept()
 			newUser = User(newSocket, "")
 			# newUser.fileno()
-			chatClasses.SERVERSOCKETLIST.append(newSocket)
+			chatClasses.SERVERSOCKETLIST.append(newUser)
 			# clients.append(newUser)
 			lobby.promptForName(newUser)
-
-# message handling not work ing ! 
 		else: 
 			try: 
-				newMsg = socket.recv(chatClasses.MAX_MESSAGE_LENGTH)
+				newMsg = notified_socket.socket.recv(chatClasses.MAX_MESSAGE_LENGTH)
+				print(newMsg.decode())
 				if newMsg: 
-					lobby.handle(socket, newMsg) 
+					print("sending msg to handler")
+					lobby.handle(notified_socket, newMsg.decode().lower()) 
 				else: # recv sent 0 bytes, closed connection 
-					if socket in chatClasses.SERVERSOCKETLIST: 
-						socket.close()
-						chatClasses.SERVERSOCKETLIST.remove(socket)
-
-				# broken connection 
-				'''print("connection to client is broken")
-				socket.close() 
-				chatClasses.SERVERSOCKETLIST.remove(socket)'''
+					print("closing connection . client sent 0 bytes over")
+					if notified_socket in chatClasses.SERVERSOCKETLIST: 
+						notified_socket.close()
+						chatClasses.SERVERSOCKETLIST.remove(notified_socket)
 			except: 
 				print("connection to client is broken")
-				socket.close() 
-				chatClasses.SERVERSOCKETLIST.remove(socket)
-
-
-
-
-
-
+				# notified_socket.close() 
+				chatClasses.SERVERSOCKETLIST.remove(notified_socket)
