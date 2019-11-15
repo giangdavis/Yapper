@@ -38,6 +38,7 @@ class User:
 		socket.setblocking(0)  
 		self.socket = socket 
 		self.name = name
+		self.rooms = [] # holds room names user is in 
 
 	def setName(self, newName): 
 		self.name = newName
@@ -47,6 +48,16 @@ class User:
 
 	def getName(self): 
 		return self.name
+	
+	def addRoom(self, room): 
+		self.rooms.append(room) 
+
+	def printRooms(self): 
+		for x in self.rooms: 
+			print(x.name)
+
+	def leaveRoom(self, roomName): 
+		self.rooms.remove(roomName)
 
 
 class Room:
@@ -60,7 +71,6 @@ class Room:
 
 	def printUsers(self): 
 		print("Users in room: " + self.name + " ") 
-		count=0
 		for x in self.users: 
 			print(x.getName() + ' ')
 
@@ -68,12 +78,20 @@ class Room:
 		for x in self.users: 
 			x.socket.sendall(msg.encode())
 
+	def removeUser(self, user):
+		self.users.remove(user) 
+
 class Lobby: 
 	def __init__(self): 
-		self.rooms = {}  # dict, {room name : room} 
+		self.rooms = {}  # {room name : room} 
 
 	def promptForName(self, user):
 		user.socket.sendall(b'You have successfully connected to the Lobby!!! What is your name?\n')
+
+	def printRooms(self): 
+		print("Rooms: ")
+		for x in self.rooms.values(): 
+			print(x.name + " ")
 
 	def handle(self, user, msg): 
 		msgLen = len(re.findall(r'\w+', msg)) # returns an int 
@@ -88,7 +106,7 @@ class Lobby:
 			else: 
 				user.socket.sendall(b'Username setting unsuccessful, please try again with the $changeName command\n')
 		elif "$commands" in msg: 
-			user.socket.sendall(COMMANDS.encode())    
+			user.socket.sendall(COMMANDS.encode())
 		elif "$room" in msg: # cases : no room, existing room, existing room and user is already in there 
 			if msgLen == 2: # argument check 
 				# See if there is an existing room 
@@ -98,24 +116,53 @@ class Lobby:
 					print("check")
 					room = self.rooms[roomName] 
 					if user in room.users: # user is already in the room 
-						print("user already in this room")
 						user.socket.sendall(b"You're already in this room!")
 					else:
-						print("check2")
 						room.addUser(user)
 						room.printUsers()
-						welcome = user.name +  ":has joined the room!"
+						user.addRoom(roomName)
+						welcome = user.name +  ":has joined the room!\n"
 						room.broadcast(welcome)
 				else: # new room 
 					newRoom = Room(roomName, user.getName()) 
 					newRoom.addUser(user) 
 					self.rooms[roomName] = newRoom
+					user.addRoom(roomName)
 					print("created a new room: " + roomName) 
 					newRoom.printUsers()
 			else: 
 				user.socket.sendall(b'Room Join/Create failed. Try Again.')
-		else: # didn't issue a valid command 
-			user.socket.sendall(b'invalid command, try again')
+		elif "$sendall" in msg: #broadcast to all current rooms 
+			if msgLen > 1: 
+				newMsg = msg[9:] + "\n"
+				for currentRoom in user.rooms: 
+					if currentRoom in self.rooms: 
+						self.rooms[currentRoom].broadcast(newMsg)
+
+				''' IN PROGRESS 
+		elif "$leave" in msg: 
+			if msgLen == 2: 
+				roomName = msgArr[1] 
+				if roomName in self.rooms: # found the room user is trying to leave
+					room = self.rooms[roomName] # grab the room
+					room.removeUser(user) # remove user from the room 
+					user.leaveRoom(roomName) # remove room from the user 
+					if len(room.users): #room is now empty, remove from rooms 
+						self.rooms.pop(roomName) 
+					user.printRooms()
+					# self.printRooms()					
+			else: 
+				return # TODO 
+				'''
+		else: 
+			if len(self.rooms) == 0: # no rooms
+				user.socket.sendall(b'invalid command, try again')
+			else: 
+				return #TODO 
+		
+
+
+		# didn't issue a valid command 
 		# else:  
 			# if user is in a room , broadcast to room x
 
@@ -129,4 +176,5 @@ For existing room check: make a function
 fuck it make functions for most of this shit : 
 	add room to rooms 
 	create room 
+	turn these into f unctions  (sphaghetti)
 '''
