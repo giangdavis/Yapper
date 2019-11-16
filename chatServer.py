@@ -31,12 +31,12 @@ while True:
             newSocket, addr = notified_socket.accept()
             newUser = User(newSocket, "")
             # newUser.fileno()
-            chatClasses.SERVERSOCKETLIST.append(newUser)
+            chatClasses.SERVERSOCKETLIST.append(newUser.socket)
             # clients.append(newUser)
             lobby.promptForName(newUser)
         else:
             try:
-                newMsg = notified_socket.socket.recv(chatClasses.MAX_MESSAGE_LENGTH)
+                newMsg = notified_socket.recv(chatClasses.MAX_MESSAGE_LENGTH)
                 print(newMsg.decode())
                 if newMsg:
                     print("sending msg to handler")
