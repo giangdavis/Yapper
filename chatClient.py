@@ -5,6 +5,11 @@ import PySimpleGUI as sg
 from chatClasses import User, Room, Lobby
 import chatClasses
 
+
+def createRoom(socket, name):
+    msg =  "$room " + name
+    socket.sendall(msg.encode())
+    
 # =========================================================== 
 
 def welcomeMenu(): 
@@ -24,11 +29,11 @@ def welcomeMenu():
 
 # ===========================================================
 
-def emptyLobby(): 
+def emptyLobby(socket): 
     layout = [[(sg.Text('This is where standard out is being routed', size=[40, 1]))],
               [sg.Output(size=(80, 20))],
               [sg.Multiline(size=(70, 5), enter_submits=True),
-               sg.Button('SEND', button_color=(sg.YELLOWS[0], sg.BLUES[0])), sg.Button('members'), sg.Button('create'),
+               sg.Button('SEND', button_color=(sg.YELLOWS[0], sg.BLUES[0])), sg.Button('members'), sg.RButton('create'),
                sg.Button('EXIT', button_color=(sg.YELLOWS[0], sg.GREENS[0]))]]
 
     window = sg.Window('Chat Window', layout, default_element_size=(30, 2))
@@ -41,7 +46,7 @@ def emptyLobby():
         elif event == 'members':
             return "$members"
         elif event == 'create':
-            return "$room " + value[0]
+            createRoom(socket, value[0])
         else:
             break
     window.close()
@@ -83,7 +88,7 @@ while 1:
                 elif "$$$rooms" in msgStr:
                     emptyLobby()
                 elif "$$$norooms" in msgStr:
-                    test=emptyLobby()
+                    test=emptyLobby(serverConnection)
                     serverConnection.sendall(test.encode())
                 sys.stdout.write(msg.decode()) 
                 # sys.stdout.flush() # get rid of it
