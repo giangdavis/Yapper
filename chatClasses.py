@@ -112,7 +112,8 @@ class Lobby:
             user.socket.sendall(b'There are no rooms right now.\n')
         else:
             for room in self.rooms:
-                print(room)
+                msg = room
+                user.socket.sendall(room.encode())
 
     def handle(self, user, msg):
         msgLen = len(re.findall(r'\w+', msg)) # returns an int
@@ -123,6 +124,7 @@ class Lobby:
         if "$newuser" in msg:
             # parse name from msg
             if msgLen == 2: # argument check
+                print(msgArr[1])
                 user.setName(msgArr[1])
                 print("New user: " + user.getName())
                 user.socket.sendall(b'Username setting successful! Type $commands for a command list\n')
