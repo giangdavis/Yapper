@@ -107,6 +107,11 @@ class Lobby:
         for x in self.rooms.values():
             print(x.name + " ")
 
+    def checkLobby(self): 
+        if len(self.rooms) == 0:
+            return False
+        return True
+
     def listRooms(self, user):
         if len(self.rooms) == 0: # no rooms to list:
             user.socket.sendall(b'There are no rooms right now.\n')
@@ -123,11 +128,16 @@ class Lobby:
         print("msg length = " + str(msgLen))
         if "$newuser" in msg:
             # parse name from msg
-            if msgLen == 2: # argument check
+            # if msgLen == 2: # argument check
+            if msgLen == 3:
                 print(msgArr[1])
                 user.setName(msgArr[1])
                 print("New user: " + user.getName())
                 user.socket.sendall(b'Username setting successful! Type $commands for a command list\n')
+                if self.checkLobby() == True:
+                    user.socket.sendall(b'$$$rooms')
+                else:
+                    user.socket.sendall(b'$$$norooms')    
             else:
                 user.socket.sendall(b'Username setting unsuccessful, please try again with the $changeName command\n')
 

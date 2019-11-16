@@ -10,7 +10,7 @@ import chatClasses
 def welcomeMenu(): 
     sg.change_look_and_feel('DarkTanBlue')
 
-    layout = [[sg.Text('You have successfully connected to the Lobby!!!')],      
+    layout = [[sg.T('You have successfully connected to the Lobby!!!')],      
                  [sg.Text('Enter a Username:'), sg.InputText(key = '__roomName__')],      
                  [sg.Submit(), sg.Cancel()]]      
 
@@ -19,25 +19,36 @@ def welcomeMenu():
     event, values = window.read()    
     window.close()
     username = values['__roomName__']
-    print(type(username))
     return username
   
 
 # ===========================================================
 
-'''
-# NEW WINDOW ===========================================================================
-#create new window 
-layout = [[sg.InputText(key='room'), sg.Text('Add a room!'), sg.Button(image_filename="addRoomButton.png", image_size=(50,50), image_subsample=10,border_width=0)]]
-createRoomWindow = sg.Window('Yapper', layout) 
+def emptyLobby(): 
+    layout = [[(sg.Text('This is where standard out is being routed', size=[40, 1]))],
+              [sg.Output(size=(80, 20))],
+              [sg.Multiline(size=(70, 5), enter_submits=True),
+               sg.Button('SEND', button_color=(sg.YELLOWS[0], sg.BLUES[0])), sg.Button('members'), sg.Button('create'),
+               sg.Button('EXIT', button_color=(sg.YELLOWS[0], sg.GREENS[0]))]]
 
-event, values = createRoomWindow.read()   
-while True:
-    if event in ('Button'):
-        room = values[0]
-createRoomWindow.close()
-# =========================================================== 
-# '''
+    window = sg.Window('Chat Window', layout, default_element_size=(30, 2))
+
+    # ---===--- Loop taking in user input and using it to query HowDoI web oracle --- #
+    while True:
+        event, value = window.read()
+        if event == 'SEND':
+            print(value)
+        elif event == 'members':
+            return "$members"
+        elif event == 'create':
+            return "$room " + value[0]
+        else:
+            break
+    window.close()
+#create new window 
+
+
+# ===========================================================
 
 if len(sys.argv) < 2:
     print("Run as follows: python3 chatClient.py hostname (where hostname is an IP)")
@@ -56,24 +67,33 @@ while 1:
     for notified_socket in readables:
         if notified_socket is serverConnection: # new msg
             msg = notified_socket.recv(chatClasses.MAX_MESSAGE_LENGTH)
-            check = msg.decode()
+            msgStr = msg.decode()
+            print(msgStr)
             if msg: #incoming message
-                if check == "$exit":
+                if msgStr == "$exit":
                     sys.stdout.write("Successfully disconnected to server.")
                     sys.exit(2)
-                elif "You have successfully connected to the Lobby!!! What is your name?" in check:
+                elif "You have successfully connected to the Lobby!!! What is your name?" in msgStr:
                     sendName=welcomeMenu()
                     first = True
                     print(sendName)
                     newMsg = "$newuser " + sendName
                     serverConnection.sendall(newMsg.encode())
-                sys.stdout.write(msg.decode()) # get rid of it
-                sys.stdout.flush() # get rid of it
+                    serverConnection.sendall(b' $$$checkLobby') # check if there are rooms
+                elif "$$$rooms" in msgStr:
+                    emptyLobby()
+                elif "$$$norooms" in msgStr:
+                    test=emptyLobby()
+                    serverConnection.sendall(test.encode())
+                sys.stdout.write(msg.decode()) 
+                # sys.stdout.flush() # get rid of it
             else: # msg contained 0 bytes, disconnected
                 print ('Connection closed!')
                 serverConnection.close()
                 sys.exit()
-                
+
+    
+
 '''
         else: # send a message from client
             if first == True:
