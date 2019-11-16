@@ -276,3 +276,18 @@ For some reason, command length is being inconsistent... stress test this
 	i think its bc if you do 1 command w/out arguments like $commands it counts the extra white space at the end. 
 	move msgLen check up into $command check if it only accepts 1 argument number like $members only accepts $members roomname (2)
 '''
+
+class Server:
+    def __init__(self, ip): 
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) 
+        self.socket.bind((ip, PORT))  
+        # s.bind((socket.gethostname(), chatClasses.PORT)) # make it available to the outside world Test this w/ Erik Device !
+        self.socket.listen(MAX_CLIENTS)
+
+    def getSocket(self):
+        return self.socket
+
+'''
+class Client:
+    def __init__(self, ip): '''

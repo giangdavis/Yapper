@@ -1,6 +1,6 @@
 import socket, sys, select
 
-from chatClasses import User, Room, Lobby
+from chatClasses import User, Room, Lobby, Server
 import chatClasses
 
 # get the host IP address and start listening for connections
@@ -11,23 +11,23 @@ if arguments == 1:
 else:
     hostAddr = '127.0.0.1'  #if no argument, default to local host
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # create a socket object s
+'''s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # create a socket object s
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # set the socket option, to continually listen. see doc 
 s.setblocking(False)  # turns off socket blocking
 s.bind((hostAddr, chatClasses.PORT))  # assigns host ip add and port to socket
 # s.bind((socket.gethostname(), chatClasses.PORT)) # make it available to the outside world Test this w/ Erik Device !
-s.listen(chatClasses.MAX_CLIENTS)
-# s = Server(hostAddr, chatClasses.PORT)
+s.listen(chatClasses.MAX_CLIENTS)'''
+s = Server(hostAddr)
 
 print("Server set up & listening! Connect with address: " , hostAddr)
 
-chatClasses.SERVERSOCKETLIST.append(s)
+chatClasses.SERVERSOCKETLIST.append(s.getSocket())
 lobby = Lobby()
 
 while True:
     readables, writables, exceptionals = select.select(chatClasses.SERVERSOCKETLIST, [], [])
     for notified_socket in readables:
-        if notified_socket is s:  # new connection
+        if notified_socket is s.getSocket():  # new connection
             newSocket, addr = notified_socket.accept()
             newUser = User(newSocket, "")
             # newUser.fileno()
