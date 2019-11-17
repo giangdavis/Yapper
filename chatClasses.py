@@ -416,7 +416,7 @@ class Client:
 # ===========================================================================
 
     def usernameFail(self):
-        layout = [[sg.Popup("Username already in use, please enter a new username")]]
+        layout = [[sg.Popup("Invalid username, please restart the client and enter a new username")]]
         window = sg.Window('Yapper', layout)
         
 # ===========================================================================
