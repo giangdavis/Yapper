@@ -345,6 +345,7 @@ class Server:
         self.socketList.append(newUser)
         return newUser
 # ===========================================================================
+
     def start(self, ip): 
         lobby = Lobby() 
         self.socket.bind((ip, PORT))   # local host    
