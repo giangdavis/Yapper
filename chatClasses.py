@@ -446,7 +446,7 @@ class Client:
         layout = [[(sg.Text('Chat Feed', size=[40, 1]))],
               [sg.Output(size=(80, 20)), sg.RButton('Commands'), sg.RButton('Chat')],
               [sg.Multiline(size=(70, 5), enter_submits=True),
-               sg.Button('Send Command', button_color=(sg.YELLOWS[0], sg.BLUES[0])), sg.RButton('Members'), sg.RButton('Create/Join'),
+               sg.Button('Command', button_color=(sg.YELLOWS[0], sg.BLUES[0])), sg.RButton('Members'), sg.RButton('Create/Join'),
                sg.Button('EXIT', button_color=(sg.YELLOWS[0], sg.GREENS[0]))]]
 
         window = sg.Window('Yapper', layout, default_element_size=(30, 2))
@@ -467,13 +467,13 @@ class Client:
                         window.close()
 
             event, values = window.read()
-            if event == 'create':
+            if event == 'Create/Join':
                 self.createRoom()
-            elif event == 'members':
+            elif event == 'Members':
                 self.listMembers()
-            elif event == 'commands':
+            elif event == 'Commands':
                 self.displayCommands()
-            elif event == 'chat':
+            elif event == 'Chat':
                 self.turnOnChat()
             else:
                 window.close()
