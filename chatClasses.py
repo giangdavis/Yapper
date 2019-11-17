@@ -1,5 +1,7 @@
 import socket
 import re
+import PySimpleGUI as sg
+import select
 
 PORT = 55555
 MAX_MESSAGE_LENGTH = 4096
@@ -129,15 +131,11 @@ class Lobby:
         if "$newuser" in msg:
             # parse name from msg
             # if msgLen == 2: # argument check
-            if msgLen == 3:
+            if msgLen == 2:
                 print(msgArr[1])
                 user.setName(msgArr[1])
                 print("New user: " + user.getName())
                 user.socket.sendall(b'Username setting successful! Type $commands for a command list\n')
-                if self.checkLobby() == True:
-                    user.socket.sendall(b'$$$rooms')
-                else:
-                    user.socket.sendall(b'$$$norooms')    
             else:
                 user.socket.sendall(b'Username setting unsuccessful, please try again with the $changeName command\n')
 
@@ -286,6 +284,8 @@ For some reason, command length is being inconsistent... stress test this
 	i think its bc if you do 1 command w/out arguments like $commands it counts the extra white space at the end. 
 	move msgLen check up into $command check if it only accepts 1 argument number like $members only accepts $members roomname (2)
 '''
+# ===========================================================================
+# ===========================================================================
 
 class Server:
     def __init__(self, ip): 
@@ -298,6 +298,79 @@ class Server:
     def getSocket(self):
         return self.socket
 
-'''
+# ===========================================================================
+# ===========================================================================
 class Client:
-    def __init__(self, ip): '''
+    def __init__(self): 
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.connectionList = [self.socket]
+
+# ===========================================================================
+
+    def createRoom(self, name):
+        msg = "$room " + name
+        self.socket.sendall(msg.encode())
+    
+# ===========================================================================
+
+    def listMembers(self, name):
+        msg = "$members " + name 
+        self.socket.sendall(msg.encode()) 
+
+# ===========================================================================
+
+    def welcomeMenu(self, msg): 
+        sg.change_look_and_feel('DarkTanBlue')
+
+        layout = [[sg.T(msg)],      
+                 [sg.Text('Enter a Username:'), sg.InputText(key = '__roomName__')],      
+                 [sg.Submit(), sg.Cancel()]]      
+
+        window = sg.Window('Yapper', layout)    
+
+        event, values = window.read()    
+        window.close()
+        username = "$newuser " + values['__roomName__']
+        return username
+
+# MAIN CHAT WINDOW =======================================================
+    def runChat(self, username): 
+        self.socket.sendall(username.encode())
+        
+        layout = [[(sg.Text('This is where standard out is being routed', size=[40, 1]))],
+              [sg.Output(size=(80, 20))],
+              [sg.Multiline(size=(70, 5), enter_submits=True),
+               sg.Button('SEND', button_color=(sg.YELLOWS[0], sg.BLUES[0])), sg.RButton('members'), sg.RButton('create'),
+               sg.Button('EXIT', button_color=(sg.YELLOWS[0], sg.GREENS[0]))]]
+
+        window = sg.Window('Yapper', layout, default_element_size=(30, 2))
+
+        while True: 
+            readables, _, _ = select.select(self.connectionList, [], [])
+
+            for notifiedSocket in readables:
+                if notifiedSocket is self.socket: # new message 
+                    encodedMsg = notifiedSocket.recv(MAX_MESSAGE_LENGTH)
+                    msg = encodedMsg.decode()
+                    print(msg)
+
+            event, values = window.read()
+            if event == 'create':
+                self.createRoom(values[0])
+            elif event == 'members':
+                self.listMembers(values[0])
+            else:
+                window.close()
+
+
+
+# ===========================================================================
+    def start(self, ip):
+        self.socket.connect((ip, PORT)) 
+
+        encodedMsg = self.socket.recv(MAX_MESSAGE_LENGTH)
+        msg = encodedMsg.decode()
+        username=self.welcomeMenu(msg) 
+        self.runChat(username) 
+# ===========================================================================
