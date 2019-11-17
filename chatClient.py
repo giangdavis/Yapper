@@ -51,6 +51,7 @@ def emptyLobby(socket):
             listMembers(socket, value[0])
         elif event == 'create':
             createRoom(socket, value[0])
+            continue
         else:
             break
     window.close()
@@ -94,7 +95,7 @@ while 1:
                 elif "$$$norooms" in msgStr:
                     test=emptyLobby(serverConnection)
                     print("--test--: " + test)
-                    serverConnection.sendall(test.encode())
+                    #serverConnection.sendall(test.encode())
                 sys.stdout.write(msg.decode()) 
                 # sys.stdout.flush() # get rid of it
             else: # msg contained 0 bytes, disconnected
