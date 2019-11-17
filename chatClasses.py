@@ -410,6 +410,16 @@ class Client:
         msg = "$commands"
         self.socket.sendall(msg.encode())
 # ===========================================================================
+    def usernameSuccess(self): 
+        return
+
+# ===========================================================================
+
+    def usernameFail(self):
+        layout = [[sg.Popup("Username already in use, please enter a new username")]]
+        window = sg.Window('Yapper', layout)
+        
+# ===========================================================================
 
     def welcomeMenu(self, msg): 
         sg.change_look_and_feel('DarkTanBlue')
