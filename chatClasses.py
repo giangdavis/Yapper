@@ -443,9 +443,9 @@ class Client:
         # nameMsg = self.socket.recv(MAX_MESSAGE_LENGTH)
         # print(nameMsg.decode())
         layout = [[(sg.Text('Chat Feed', size=[40, 1]))],
-              [sg.Output(size=(80, 20)), sg.RButton('commands'), sg.RButton('chat')],
+              [sg.Output(size=(80, 20)), sg.RButton('Commands'), sg.RButton('Chat')],
               [sg.Multiline(size=(70, 5), enter_submits=True),
-               sg.Button('SEND', button_color=(sg.YELLOWS[0], sg.BLUES[0])), sg.RButton('members'), sg.RButton('create'),
+               sg.Button('Send Command', button_color=(sg.YELLOWS[0], sg.BLUES[0])), sg.RButton('Members'), sg.RButton('Create/Join'),
                sg.Button('EXIT', button_color=(sg.YELLOWS[0], sg.GREENS[0]))]]
 
         window = sg.Window('Yapper', layout, default_element_size=(30, 2))
