@@ -178,7 +178,7 @@ class Lobby:
                         # user.socket.sendall(b'$#@!Username$#@!')
                 user.setName(msgArr[1])
                 print("New user: " + user.getName())
-                user.socket.sendall(b'!@#$Username!@#$') #success
+                # user.socket.sendall(b'!@#$Username!@#$') #success
             else: # adjust 
                 user.socket.sendall(b'$#@!Username$#@!') #not success
             '''if self.checkLobby() is False:
@@ -309,7 +309,8 @@ class Lobby:
                 for i in user.rooms: # loop through the rooms that the user is in
                     if user.rooms.get(i): # the user is actively chatting in this room
                         room = self.rooms.get(i)
-                        room.broadcast(msg)
+                        msg2 = user.name + ": " + msg
+                        room.broadcast(msg2)
 
 
 '''
@@ -410,9 +411,16 @@ class Client:
     def displayCommands(self):
         msg = "$commands"
         self.socket.sendall(msg.encode())
+
 # ===========================================================================
+
     def usernameSuccess(self): 
         return
+
+# ===========================================================================
+
+    def chat(self, msg):
+        self.socket.sendall(msg.encode())
 
 # ===========================================================================
 
@@ -444,9 +452,9 @@ class Client:
         # nameMsg = self.socket.recv(MAX_MESSAGE_LENGTH)
         # print(nameMsg.decode())
         layout = [[(sg.Text('Chat Feed', size=[40, 1]))],
-              [sg.Output(size=(80, 20)), sg.RButton('commands'), sg.RButton('chat')],
+              [sg.Output(size=(80, 20)), sg.RButton('Commands'), sg.RButton('Chat')],
               [sg.Multiline(size=(70, 5), enter_submits=True),
-               sg.Button('SEND', button_color=(sg.YELLOWS[0], sg.BLUES[0])), sg.RButton('members'), sg.RButton('create'),
+               sg.Button('Command', button_color=(sg.YELLOWS[0], sg.BLUES[0])), sg.RButton('Members'), sg.RButton('Create/Join'),
                sg.Button('EXIT', button_color=(sg.YELLOWS[0], sg.GREENS[0]))]]
 
         window = sg.Window('Yapper', layout, default_element_size=(30, 2))
@@ -467,17 +475,16 @@ class Client:
                         window.close()
 
             event, values = window.read()
-            if event == 'create':
+            if event == 'Create/Join':
                 self.createRoom()
-            elif event == 'members':
+            elif event == 'Members':
                 self.listMembers()
-            elif event == 'commands':
+            elif event == 'Commands':
                 self.displayCommands()
-            elif event == 'chat':
+            elif event == 'Chat':
                 self.turnOnChat()
             else:
                 window.close()
-
 
 # ===========================================================================
     def start(self, ip):
