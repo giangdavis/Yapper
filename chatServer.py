@@ -17,13 +17,12 @@ s.setblocking(False)  # turns off socket blocking
 s.bind((hostAddr, chatClasses.PORT))  # assigns host ip add and port to socket
 # s.bind((socket.gethostname(), chatClasses.PORT)) # make it available to the outside world Test this w/ Erik Device !
 s.listen(chatClasses.MAX_CLIENTS)'''
-s = Server(hostAddr)
+s = Server()
+s.start(hostAddr)
 
-print("Server set up & listening! Connect with address: " , hostAddr)
-
-chatClasses.SERVERSOCKETLIST.append(s.getSocket())
-lobby = Lobby()
-
+# chatClasses.SERVERSOCKETLIST.append(s.getSocket())
+# lobby = Lobby()
+'''
 while True:
     readables, writables, exceptionals = select.select(chatClasses.SERVERSOCKETLIST, [], [])
     for notified_socket in readables:
@@ -48,3 +47,4 @@ while True:
             except:
                 print("Connection to client has been broken")
                 chatClasses.SERVERSOCKETLIST.remove(notified_socket)
+                '''
