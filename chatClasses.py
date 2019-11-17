@@ -179,9 +179,9 @@ class Lobby:
                         return 
                 user.setName(msgArr[1])
                 print("New user: " + user.getName())
-                user.socket.sendall(b'Username setting successful! Type $commands for a command list\n')
+                user.socket.sendall(b'!@#$Username!@#$') #success
             else: # adjust 
-                user.socket.sendall(b'Username setting unsuccessful, please try again with the $changeName command\n')
+                user.socket.sendall(b'$#@!Username$#@!') #not success
             '''if self.checkLobby() is False:
                 user.socket.sendall(b'0')
             else:
@@ -395,6 +395,14 @@ class Client:
     def listMembers(self, name):
         msg = "$members " + name 
         self.socket.sendall(msg.encode()) 
+# ===========================================================================
+
+    def usernameSuccess(self): 
+
+# ===========================================================================
+
+    def usernameFail(self):
+
 
 # ===========================================================================
 
@@ -416,6 +424,7 @@ class Client:
     # def runChat(self, username, roomCheck): 
     def runChat(self, username):
         self.socket.sendall(username.encode())
+
         # nameMsg = self.socket.recv(MAX_MESSAGE_LENGTH)
         # print(nameMsg.decode())
         '''if roomCheck == 0:
@@ -437,9 +446,14 @@ class Client:
                 if notifiedSocket is self.socket: # new message 
                     encodedMsg = notifiedSocket.recv(MAX_MESSAGE_LENGTH)
                     msg = encodedMsg.decode()
+                    if msg == "!@#$Username!@#$": 
+                        self.usernameSuccess()
+                    elif msg == "$#@!Username$#@!":
+                        self.usernameFail()
                     if msg:
                         print(msg)
                     else: 
+                    #if msg == 0:
                         print('Connection closed!') 
                         self.socket.close()
                         sys.exit()
@@ -453,6 +467,7 @@ class Client:
             else:
                 window.close()
 
+
 # ===========================================================================
     def start(self, ip):
         try: 
@@ -464,6 +479,6 @@ class Client:
             # self.runChat(username, roomCheck.decode()) 
             self.runChat(username) 
         except:
-            print("Unsuccessful connection")
+            print("connection lost")
             self.socket.close()
 # ===========================================================================
