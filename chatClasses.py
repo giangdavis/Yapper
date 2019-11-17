@@ -173,10 +173,9 @@ class Lobby:
             # parse name from msg
             # if msgLen == 2: # argument check
             if msgLen == 2:
-                for room in self.rooms:
-                    if msgArr[1] in room.users:
-                        # TODO = existing user 
-                        return 
+                # for room in self.rooms:
+                    # if msgArr[1] in room.users:
+                        # user.socket.sendall(b'$#@!Username$#@!')
                 user.setName(msgArr[1])
                 print("New user: " + user.getName())
                 user.socket.sendall(b'!@#$Username!@#$') #success
@@ -187,7 +186,7 @@ class Lobby:
             else:
                 user.socket.sendall(b'1')'''
 
-        elif "$commands" in msg and commandLen == 10:
+        elif "$commands" in msg and commandLen == 9:
             user.socket.sendall(COMMANDS.encode())
 
         elif "$rooms" in msg and commandLen == 7:
@@ -386,24 +385,30 @@ class Client:
 
 # ===========================================================================
 
-    def createRoom(self, name):
+    def createRoom(self):
+        name = sg.PopupGetText('Enter room name: ', 'Input Room Name')
         msg = "$room " + name
         self.socket.sendall(msg.encode())
     
 # ===========================================================================
 
-    def listMembers(self, name):
+    def listMembers(self):
+        name = sg.PopupGetText('Which room would you like to see the members of?', 'Input Room Name')
         msg = "$members " + name 
         self.socket.sendall(msg.encode()) 
-# ===========================================================================
-
-    def usernameSuccess(self): 
 
 # ===========================================================================
 
-    def usernameFail(self):
+    def turnOnChat(self):
+        name = sg.PopupGetText('Which room would you like to chat in?', 'Input Room Name')
+        msg = "$chat " + name 
+        self.socket.sendall(msg.encode()) 
 
+# ===========================================================================
 
+    def displayCommands(self):
+        msg = "$commands"
+        self.socket.sendall(msg.encode())
 # ===========================================================================
 
     def welcomeMenu(self, msg): 
@@ -427,12 +432,8 @@ class Client:
 
         # nameMsg = self.socket.recv(MAX_MESSAGE_LENGTH)
         # print(nameMsg.decode())
-        '''if roomCheck == 0:
-            layout = [[sg.Text("There are no rooms right now.")],[sg.Button('create')]]
-        else:
-            layout [[sg.Text("hi")]] #If there are rooms, list them make them clickable. '''
-        layout = [[(sg.Text('This is where standard out is being routed', size=[40, 1]))],
-              [sg.Output(size=(80, 20))],
+        layout = [[(sg.Text('Chat Feed', size=[40, 1]))],
+              [sg.Output(size=(80, 20)), sg.RButton('commands'), sg.RButton('chat')],
               [sg.Multiline(size=(70, 5), enter_submits=True),
                sg.Button('SEND', button_color=(sg.YELLOWS[0], sg.BLUES[0])), sg.RButton('members'), sg.RButton('create'),
                sg.Button('EXIT', button_color=(sg.YELLOWS[0], sg.GREENS[0]))]]
@@ -446,14 +447,9 @@ class Client:
                 if notifiedSocket is self.socket: # new message 
                     encodedMsg = notifiedSocket.recv(MAX_MESSAGE_LENGTH)
                     msg = encodedMsg.decode()
-                    if msg == "!@#$Username!@#$": 
-                        self.usernameSuccess()
-                    elif msg == "$#@!Username$#@!":
-                        self.usernameFail()
                     if msg:
                         print(msg)
                     else: 
-                    #if msg == 0:
                         print('Connection closed!') 
                         self.socket.close()
                         sys.exit()
@@ -461,9 +457,13 @@ class Client:
 
             event, values = window.read()
             if event == 'create':
-                self.createRoom(values[0])
+                self.createRoom()
             elif event == 'members':
-                self.listMembers(values[0])
+                self.listMembers()
+            elif event == 'commands':
+                self.displayCommands()
+            elif event == 'chat':
+                self.turnOnChat()
             else:
                 window.close()
 
