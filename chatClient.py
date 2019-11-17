@@ -4,20 +4,16 @@ import sys
 from chatClasses import User, Room, Lobby, Client
 import chatClasses
 
-if len(sys.argv) < 2:
+client = Client()
+client.start('127.0.0.1')
+
+'''if len(sys.argv) < 2:
     print("Run as follows: python3 chatClient.py hostname (where hostname is an IP)")
     exit()
 else:
     client = Client()
-    client.start(sys.argv[1])
-    '''serverConnection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serverConnection.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    serverConnection.connect((sys.argv[1], chatClasses.PORT))'''
+    client.start(sys.argv[1])'''
     
-# connectionList = [sys.stdin, serverConnection]
-# connectionList = [serverConnection]
-
-# first = False
 
 '''while 1:
     readables, _, _ = select.select(connectionList, [], [])
