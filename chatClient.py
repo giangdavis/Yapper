@@ -9,7 +9,11 @@ import chatClasses
 def createRoom(socket, name):
     msg =  "$room " + name
     socket.sendall(msg.encode())
-    
+
+def listMembers(socket, roomName):
+    msg = "$members " + roomName
+    socket.sendall(msg.encode())
+
 # =========================================================== 
 
 def welcomeMenu(): 
@@ -44,7 +48,7 @@ def emptyLobby(socket):
         if event == 'SEND':
             print(value)
         elif event == 'members':
-            return "$members"
+            listMembers(socket, value[0])
         elif event == 'create':
             createRoom(socket, value[0])
         else:
@@ -89,6 +93,7 @@ while 1:
                     emptyLobby()
                 elif "$$$norooms" in msgStr:
                     test=emptyLobby(serverConnection)
+                    print("--test--: " + test)
                     serverConnection.sendall(test.encode())
                 sys.stdout.write(msg.decode()) 
                 # sys.stdout.flush() # get rid of it
