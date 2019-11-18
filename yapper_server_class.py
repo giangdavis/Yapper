@@ -1,36 +1,21 @@
-import socket
+# Contains the Server, User, Room, & Lobby classes 
+import socket, re, select 
 import re
-import PySimpleGUI as sg
 import select
 
 PORT = 55555
 MAX_MESSAGE_LENGTH = 4096
 MAX_CLIENTS = 15
-SERVERSOCKETLIST = []
 
-''' TO DO : make server its own class, with a hall, rooms and users 
- Decisions to make : How do we want to handle incorrect username setting first time logging in?
- class feed ? haven't decided where this should go.. 
- thinking its server side.. and server will handle outputting
- all room msgs to all its clients 
-
+''' TO DO :  
 Server disconnecting from clients 
 Client/Server "gracefully" handling crashes 
-
-  Extra credit: PMs, File Transfer 
-  
-Have not implemented password 
-
-class Server: 
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	def __init__ (self, host, port): 
-		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # set the socket option, to continually listen. see doc 
-	s.setblocking(False)  # turns off socket blocking
-	s.bind(host, port)  # assigns host ip add and port to socket  
-	# s.bind((socket.gethostname(), chatClasses.PORT)) # make it available to the outside world Test this w/ Erik Device ! 
-	s.listen(MAX_CLIENTS) 
+? Password ? 
+Extra credit: PMs, File Transfer 
 '''
-# commands (only create once)
+# COMMAND STRINGS 
+# ===========================================================================
+
 NAMECHANGE = "$name name [Changes username]\n"
 NEWROOM = "$Room roomname [Creates/Joins Room]\n"
 LEAVE = "$leave roomname [Removes user from room]\n"
@@ -43,6 +28,8 @@ COMMANDS = "All available commands:\n" + NAMECHANGE + NEWROOM + LEAVE + MEMBERS 
 
 # ===========================================================================
 # ===========================================================================
+# ===========================================================================
+# ===========================================================================
 
 class User:
     def __init__(self, socket, name):
@@ -52,9 +39,16 @@ class User:
         self.rooms = {} # {RoomName : Bool} Bool = user is sending msgs to room
 
 # ===========================================================================
+    
+    def __del__(self):
+        self.name = ""
+        self.socket.close()
+
+# ===========================================================================
 
     def setName(self, newName):
         self.name = newName
+
 # ===========================================================================
 
     def fileno(self):
@@ -121,6 +115,8 @@ class Room:
 
 # ===========================================================================
 # ===========================================================================
+# ===========================================================================
+# ===========================================================================
 
 class Lobby:
     def __init__(self):
@@ -173,6 +169,15 @@ class Lobby:
             for room in self.rooms:
                 msg = room
                 user.socket.sendall(room.encode())
+# ===========================================================================
+
+    def disconnectUser(self, user):
+        for roomName in user.rooms:
+            room = self.rooms[roomName] 
+            room.removeUser(user)
+        if user.name in self.users:
+            self.users.remove(user.name)
+
 
 # ===========================================================================
 
@@ -180,6 +185,7 @@ class Lobby:
         newRoom = Room(name)
         newRoom.addUser(user)
         self.rooms[name] = newRoom
+        # print(self.rooms.get(name).name + "!!!!") print room
         user.addRoom(name)
         welcome = user.name + " has joined the room!\n"
         print(user.name + " created a new room")
@@ -330,24 +336,6 @@ class Lobby:
                         room = self.rooms.get(i)
                         msg2 = user.name + ": " + msg
                         room.broadcast(msg2)
-
-
-'''
-Notes
-Can we move msg length check to only do it once? 
-commands: create/join room , broadcast to all rooms, broadcast to more than 1 room, disconnect 
-list all rooms, leave room, joining multiple rooms 
-For existing room check: make a function 
-fuck it make functions for most of this shit : 
-	add room to rooms 
-	create room 
-	turn these into f unctions  (sphaghetti)
-	program currently accepts : "$roomf as a valid room command and for other commands. 
-	can fix this by also checking the str len 
-For some reason, command length is being inconsistent... stress test this 
-	i think its bc if you do 1 command w/out arguments like $commands it counts the extra white space at the end. 
-	move msgLen check up into $command check if it only accepts 1 argument number like $members only accepts $members roomname (2)
-'''
 # ===========================================================================
 # ===========================================================================
 
@@ -364,12 +352,12 @@ class Server:
         # newUser.fileno()
         self.socketList.append(newUser)
         return newUser
+
 # ===========================================================================
 
-    def start(self, ip): 
+    def run(self, ip): 
         lobby = Lobby() 
         self.socket.bind((ip, PORT))   # local host    
-        # use cloud  
         # s.bind((socket.gethostname(), chatClasses.PORT)) 
         self.socket.listen(MAX_CLIENTS)
 
@@ -392,202 +380,12 @@ class Server:
                             print("Client sent 0 bytes, closed connection")
                             if notifiedSocket in self.socketList:
                                 self.socketList.remove(notifiedSocket)
+                                lobby.disconnectUser(notifiedSocket)
+                                del notifiedSocket
                     except:
                         print("Connection to client has been broken")
+                        lobby.disconnectUser(notifiedSocket)
                         self.socketList.remove(notifiedSocket)
+                        del notifiedSocket
 
 # ===========================================================================
-# ===========================================================================
-class Client:
-    def __init__(self): 
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.connectionList = [self.socket]
-
-# ===========================================================================
-
-    def createRoom(self):
-        name = sg.PopupGetText('Enter room name: ', 'Input Room Name')
-        msg = "$room " + name
-        self.socket.sendall(msg.encode())
-    
-# ===========================================================================
-
-    def listMembers(self):
-        name = sg.PopupGetText('Which room would you like to see the members of?', 'Input Room Name')
-        msg = "$members " + name 
-        self.socket.sendall(msg.encode()) 
-
-# ===========================================================================
-
-    def turnOnChat(self):
-        name = sg.PopupGetText('Which room would you like to chat in?', 'Input Room Name')
-        msg = "$chat " + name 
-        self.socket.sendall(msg.encode()) 
-
-# ===========================================================================
-
-    def displayCommands(self):
-        msg = "$commands"
-        self.socket.sendall(msg.encode())
-
-# ===========================================================================
-
-    def usernameSuccess(self): 
-        return
-
-# ===========================================================================
-
-    def chat(self, msg):
-        self.socket.sendall(msg.encode())
-
-# ===========================================================================
-
-    def usernameFail(self):
-        layout = [[sg.Popup("Invalid username, please restart the client and enter a new username")]]
-        window = sg.Window('Yapper', layout)
-        
-# ===========================================================================
-
-    def welcomeMenu(self, msg): 
-        sg.change_look_and_feel('DarkTanBlue')
-
-        layout = [[sg.T(msg)],      
-                 [sg.Text('Enter a Username:'), sg.InputText(key = '__username__')],      
-                 [sg.Submit(), sg.Cancel()]]      
-
-        window = sg.Window('Yapper', layout)    
-
-        event, values = window.read()    
-        window.close()
-        username = "$newuser " + values['__username__']
-        return username
-# ===========================================================================
-
-    def IOcheck(self, w, msg):
-        if "empty" in msg:
-            event, values = w.read()
-        else:
-            event, values = w.Read(timeout=100) # values are dictionaries when using multiline
-
-        if event == 'create':
-            self.createRoom()
-        elif event == 'members':
-            self.listMembers() 
-        elif event == 'commands':
-            self.displayCommands()
-        elif event == 'chat':
-            self.turnOnChat()
-            window['INPUT'].update(disabled=False)
-        elif event == 'SEND':
-            msg = values.get('INPUT')
-            self.chat(msg)
-        elif event is None:
-            w.close()
-        else:
-            w.close()
-        
-        socketCheck(w)
-        return
-
-# ===========================================================================
-
-    def socketCheck(self, w):
-        readables, _, _ = select.select(self.connectionList, [], [])
-
-        for notifiedSocket in readables:
-            if notifiedSocket is self.socket: # new message 
-                encodedMsg = notifiedSocket.recv(MAX_MESSAGE_LENGTH)
-                msg = encodedMsg.decode()
-                if "!@#$Username!@#$" in msg:
-                    self.IOcheck(w, msg)
-                    return
-                elif msg == "$#@!Username$#@!":
-                    self.usernameFail()
-                elif msg:
-                    # window.read()
-                    print(msg)
-                else: 
-                    print('Connection closed!') 
-                    self.socket.close()
-                    sys.exit()
-                    window.close()
-
-        self.IOcheck(w, msg)
-        return
-    
-# MAIN CHAT WINDOW =======================================================
-    # def runChat(self, username, roomCheck): 
-    def runChat(self, username):
-        self.socket.sendall(username.encode())
-
-        # nameMsg = self.socket.recv(MAX_MESSAGE_LENGTH)
-        # print(nameMsg.decode())
-        layout = [[(sg.Text('Chat Feed', size=[40, 1]))],
-              [sg.Output(key='FEED', size=(80, 20)), sg.RealtimeButton('commands'), sg.RealtimeButton('chat')],
-              [sg.Multiline(key='INPUT', size=(70, 5), enter_submits=True, disabled=True, do_not_clear=False),
-               sg.RealtimeButton('SEND', button_color=(sg.YELLOWS[0], sg.BLUES[0])), sg.RealtimeButton('members'), sg.RealtimeButton('create'),
-               sg.RealtimeButton('EXIT', button_color=(sg.YELLOWS[0], sg.GREENS[0]))]]
-
-        window = sg.Window('Yapper', layout, default_element_size=(30, 2), finalize=True)
-
-        while True: 
-            self.socketCheck(window) 
-            
-        window.close()
-        return
-# ===========================================================================
-    def start(self, ip):
-        try: 
-            self.socket.connect((ip, PORT)) 
-            encodedMsg = self.socket.recv(MAX_MESSAGE_LENGTH)
-            msg = encodedMsg.decode()
-            username=self.welcomeMenu(msg) 
-            # roomCheck = self.socket.recv(MAX_MESSAGE_LENGTH)
-            # self.runChat(username, roomCheck.decode()) 
-            w = self.runChat(username) 
-            w.close()
-        except Exception as e:
-            print("connection lost\n")
-            print(e)
-            self.socket.close()
-# ===========================================================================
-'''
-            readables, _, _ = select.select(self.connectionList, [], [], 0)[0]
-
-            for notifiedSocket in readables:
-                if notifiedSocket is self.socket: # new message 
-                    encodedMsg = notifiedSocket.recv(MAX_MESSAGE_LENGTH)
-                    msg = encodedMsg.decode()
-                    if msg == "!@#$Username!@#$":
-                        window.read()
-                    elif msg == "$#@!Username$#@!":
-                        self.usernameFail()
-                    elif msg:
-                        # window.read()
-                        print(msg)
-                    else: 
-                        print('Connection closed!') 
-                        self.socket.close()
-                        sys.exit()
-                        window.close()
-
-            event, values = window.read() # values are dictionaries when using multiline
-            # window['FEED'].update(msg)
-            if event == 'create':
-                self.createRoom()
-            elif event == 'members':
-                self.listMembers() 
-            elif event == 'commands':
-                self.displayCommands()
-            elif event == 'chat':
-                self.turnOnChat()
-                window['INPUT'].update(disabled=False)
-            elif event == 'SEND':
-                msg = values.get('INPUT')
-                self.chat(msg)
-            elif event == None:
-                break
-            else:
-                break 
-                '''
