@@ -61,7 +61,7 @@ class Client:
 
 # ===========================================================================
     
-    def getData(self, runFreq, guiQueue):
+    def getData(self, runFreq, lock, guiQueue):
         readables, _, _ = select.select(self.connectionList, [], [])
         while True:
             for notifiedSocket in readables:
@@ -81,6 +81,7 @@ class Client:
                         self.socket.close()
                         sys.exit()
                         window.close()
+
 
 # ===========================================================================
 

@@ -15,17 +15,14 @@ Extra credit: PMs, File Transfer
 '''
 # COMMAND STRINGS 
 # ===========================================================================
-
-NAMECHANGE = "$name name [Changes username]\n"
-NEWROOM = "$Room roomname [Creates/Joins Room]\n"
-LEAVE = "$leave roomname [Removes user from room]\n"
-MEMBERS = "$members roomname [List members of room]\n"
-EXIT = "$exit [disconnects from server]"
-ROOMS = "$rooms [list all rooms in the lobby]\n"
-COMMAND = "$commands [displays commands]\n"
-CHATIN = "$chat roomname [to start sending messages to a room(s)]\n"
-COMMANDS = "All available commands:\n" + NAMECHANGE + NEWROOM + LEAVE + MEMBERS + ROOMS + COMMAND + CHATIN
-
+'''
+COMMANDS = "All available commands:\n" + 
+NAMECHANGE + 
+NEWROOM + LEAVE 
++ MEMBERS + ROOMS + 
+COMMAND + 
+CHATIN
+'''
 # ===========================================================================
 # ===========================================================================
 # ===========================================================================
@@ -210,8 +207,8 @@ class Lobby:
             else: # invalid arguments
                 user.socket.sendall(b'$#@!Username$#@!') 
 
-        elif "$commands" in msg and commandLen == 9:
-            user.socket.sendall(COMMANDS.encode())
+        # elif "$commands" in msg and commandLen == 9:
+            # user.socket.sendall(COMMANDS.encode())
 
         elif "$rooms" in msg and commandLen == 7:
             if msgLen == 1:
