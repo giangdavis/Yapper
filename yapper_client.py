@@ -7,20 +7,17 @@ import yapper_client_class as yapper
 client = yapper.Client()
 client.start('127.0.0.1')
 
-lock = threading.Lock()
-
 guiQueue = queue.Queue()
-threading.Thread(target=client.getData, args=(lock, guiQueue), daemon=True).start()
+threading.Thread(target=client.getData, args=(500, guiQueue), daemon=True).start()
+# threading.Thread(target=client.getData, args=(200, guiQueue), daemon=True).start()
 
 layout = [[(sg.Text('Chat Feed', size=[40, 1]))],
               [sg.Output(key='FEED', size=(80, 20)), sg.RealtimeButton('commands'), sg.RealtimeButton('chat')],
-              [sg.Multiline(key='INPUT', size=(70, 5), enter_submits=True, disabled=True, do_not_clear=True),
+              [sg.Multiline(key='INPUT', size=(70, 5), enter_submits=True, disabled=True, do_not_clear=True, autoscroll=True, default_text="click chat to input text"),
                sg.RealtimeButton('SEND', button_color=(sg.YELLOWS[0], sg.BLUES[0])), sg.RealtimeButton('members'), sg.RealtimeButton('create'),
                sg.RealtimeButton('EXIT', button_color=(sg.YELLOWS[0], sg.GREENS[0]))]]
 
 window = sg.Window('Yapper', layout, default_element_size=(30, 2), finalize=True)
-
-i = 0 
 
 while True:
     event, values = window.read(timeout=100)
@@ -34,7 +31,8 @@ while True:
     elif event == 'chat':
         client.turnOnChat()
         window['INPUT'].update(disabled=False)
-    elif event == 'SEND':
+        window['INPUT'].update(default_text="")
+    elif event == 'SEND': # add enter key 
         msg = values.get('INPUT')
         client.chat(msg)
     elif event in (None, 'EXIT'):

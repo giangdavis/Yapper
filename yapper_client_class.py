@@ -60,8 +60,8 @@ class Client:
         self.socket.sendall(msg.encode())
 
 # ===========================================================================
-    #run freq = how often the thread should run in ms 
-    def getData(self, lock, guiQueue):
+    
+    def getData(self, runFreq, guiQueue):
         readables, _, _ = select.select(self.connectionList, [], [])
         while True:
             for notifiedSocket in readables:
@@ -76,13 +76,12 @@ class Client:
                         self.usernameFail()
                     elif msg:
                         guiQueue.put(msg)
-                        print(runFreq)
-                        runFreq = runFreq + 1
                     else: 
                         print('Connection closed!') 
                         self.socket.close()
                         sys.exit()
                         window.close()
+
 # ===========================================================================
 
     def start(self, ip):

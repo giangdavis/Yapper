@@ -241,14 +241,6 @@ class Lobby:
                         user.socket.sendall(b'You now receive messages from this room, to chat in this room: use the command $chat\n')
                 else: # new room TO DO turn into function
                     self.addRoom(roomName, user)
-                    '''newRoom = Room(roomName)
-                    newRoom.addUser(user)
-                    self.rooms[roomName] = newRoom
-                    user.addRoom(roomName)
-                    welcome = user.name +  ":has joined the room!\n"
-                    print("created a new room: " + roomName)
-                    newRoom.printUsers()
-                    user.socket.sendall(b'You now receive messages from this room, to chat in this room: use the command $chat\n')'''
             elif msgLen > 2: #user is trying to join multiple rooms
                 for currentRoomName in msgArr[1:]:
                     print (currentRoomName)
