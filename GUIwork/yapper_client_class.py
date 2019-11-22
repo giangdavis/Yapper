@@ -58,12 +58,13 @@ class Client:
 
     def usernameFail(self):
         layout = [[sg.Popup("Invalid username, please restart the client and enter a new username")]]
-        window = sg.Window('Yapper', layout)
+        window = sg.Window("Yapper", layout)
         window.close()
 
     # ===========================================================================
 
-    def joinRoom(self, room):
+    def joinRoom(self, list):
+        room = str(list[0])
         msg = "$room " + room
         self.socket.sendall(msg.encode())
 
@@ -71,29 +72,22 @@ class Client:
 
     def displayRooms(self, msg):
         arr = msg.split(" ")
-        rooms = {arr[1]} # set room for fast look ups
+        roomListing = []
+        for roomName in arr[2:]:
+            roomListing.append(roomName)
 
-        if len(arr) > 2:
-            for currentRoomName in arr[2:]:
-                rooms.add(currentRoomName)
-        arr = []
-        for room in rooms:
-            arr.append(room)
+        layout = [[sg.Listbox(roomListing, size=(100, 200), enable_events=True, key='--rooms--')]
+                  , [sg.Button('Exit')]]
 
-        layout = [[self.roomBt(arr)]] # add refresh button
-        window = sg.Window('Rooms', layout, size=(150,225))
+        window = sg.Window('Rooms', layout, size=(150, 225)) # add a refresh button
 
         while True:
             event, values = window.read()
-            if event == None:
+            if event in (None, 'Exit'):
                 break
-            if event == 'ROOMS':
-                self.joinRoom(values['ROOMS'])
+            elif event == '--rooms--':
+                self.joinRoom(values['--rooms--'])
         window.close()
-    # ===========================================================================
-
-    def roomBt(self, rooms):
-        return sg.Listbox(key='ROOMS', values=rooms, right_click_menu=['Join'], size=(100, 200), enable_events=True)
 
     # ===========================================================================
 
@@ -102,8 +96,8 @@ class Client:
         msg = "$newuser " + username
         self.socket.sendall(msg.encode())
 
-
     # ===========================================================================
+
     def sendLobbyCheck(self):
         msg = "!@#$roomUpdate!@#$"
         self.socket.sendall(msg.encode())

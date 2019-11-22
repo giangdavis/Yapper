@@ -12,6 +12,8 @@ Server disconnecting from clients
 Client/Server "gracefully" handling crashes 
 ? Password ? 
 Extra credit: PMs, File Transfer 
+join room command: check if user is already in room ?
+cancel button in 'welcome menu lobby' 
 '''
 # COMMAND STRINGS
 # ===========================================================================
@@ -62,7 +64,7 @@ class User:
     # ===========================================================================
 
     def addRoom(self, room):
-        self.rooms[room] = False
+        self.rooms[room] = True
 
     # ===========================================================================
 
@@ -172,7 +174,7 @@ class Lobby:
             msg2 = ""
             for room in self.rooms:
                 msg = room
-                msg2 = msg2 + ' ' + msg
+                msg2 = msg2 + " " + msg
 
             finalMsg = prefix + msg2
             user.socket.sendall(finalMsg.encode())
@@ -245,8 +247,8 @@ class Lobby:
                         user.addRoom(roomName)
                         welcome = user.name + " is now lurking. \n"
                         room.broadcast(welcome)
-                        user.socket.sendall(
-                            b'You now receive messages from this room, to chat in this room: use the command $chat\n')
+                        roomMsg = 'You have joined ' + roomName + '!'
+                        user.socket.sendall(roomMsg.encode())
                 else:  # new room TO DO turn into function
                     self.addRoom(roomName, user)
             elif msgLen > 2:  # user is trying to join multiple rooms
@@ -301,16 +303,6 @@ class Lobby:
                     self.invalidCommand(user)
             else:
                 self.invalidCommand(user)
-
-        elif "$chat" in msg and commandLen == 5:  # and msgArr >= 2: # see if this 3rd condition works
-            for roomName in msgArr:
-                if roomName in self.rooms:
-                    if roomName in user.rooms:
-                        user.rooms[roomName] = True
-                        user.socket.sendall(b'You are now able to chat in the desired room\n')
-                    else:
-                        tStr = "The room " + roomName + " is not yet created. Use $room!\n"
-                        user.socket.sendall(tStr.encode())
 
         elif "$exit" in msg and commandLen == 6:
             if msgLen == 1:

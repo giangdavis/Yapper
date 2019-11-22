@@ -13,7 +13,8 @@ guiQueue = queue.Queue()
 threading.Thread(target=client.getData, args=(500, lock, guiQueue)).start()
 # threading.Thread(target=client.getData, args=(200, guiQueue), daemon=True).start()
 
-menu = [['Room', ['Create/Join', 'List Members', 'View current rooms']],
+menu = [['Lobby', ['View current Rooms', 'Broadcast']],
+        ['Room', ['Create/Join', 'List Members']],
             ['Friend', ['Add', 'Remove']]]
 
 layout = [[sg.Menu(menu)], [(sg.Text('Chat Feed', size=[40,1]))],
@@ -57,8 +58,8 @@ while True:
         client.roomInfo()
     elif event == 'members':
         client.listMembers()
-    elif event == 'chat':
-        client.turnOnChat()
+    elif event == 'Broadcast':
+        client.listMembers()
     elif event == 'SEND':  # add enter key
         if lock.locked():
             continue
