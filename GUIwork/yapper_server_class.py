@@ -6,7 +6,6 @@ import select
 PORT = 55555
 MAX_MESSAGE_LENGTH = 4096
 MAX_CLIENTS = 15
-
 ''' TO DO :  
 Server disconnecting from clients 
 Client/Server "gracefully" handling crashes 
@@ -61,8 +60,7 @@ class User:
 
     # ===========================================================================
 
-    def addRoom(self, room):
-        self.rooms[room] = False
+    def addRoom(self, room): self.rooms[room] = False
 
     # ===========================================================================
 
@@ -172,7 +170,7 @@ class Lobby:
             msg2 = ""
             for room in self.rooms:
                 msg = room
-                msg2 = msg2 + ' ' + msg
+                msg2 = msg2 + " " + msg
 
             finalMsg = prefix + msg2
             user.socket.sendall(finalMsg.encode())
@@ -292,25 +290,21 @@ class Lobby:
                 self.invalidCommand(user)
 
         elif "$members" in msg and commandLen == 8:
-            if msgLen == 2:
-                roomName = msgArr[1]
-                if roomName in self.rooms:
-                    room = self.rooms[roomName]
-                    room.printMembers(user)
-                else:
-                    self.invalidCommand(user)
+            if msgLen == 1:
+                #roomName = msgArr[1]
+                #if roomName in self.rooms:
+                #room = self.rooms[roomName]
+                #room.printMembers(user)
+                #else:
+                #self.invalidCommand(user)
+
+                for userRoom in user.rooms:
+                 if user.rooms[userRoom]:
+                     member = user.name + " "
+                     user.socket.sendall(member.encode())
+
             else:
                 self.invalidCommand(user)
-
-        elif "$chat" in msg and commandLen == 5:  # and msgArr >= 2: # see if this 3rd condition works
-            for roomName in msgArr:
-                if roomName in self.rooms:
-                    if roomName in user.rooms:
-                        user.rooms[roomName] = True
-                        user.socket.sendall(b'You are now able to chat in the desired room\n')
-                    else:
-                        tStr = "The room " + roomName + " is not yet created. Use $room!\n"
-                        user.socket.sendall(tStr.encode())
 
         elif "$exit" in msg and commandLen == 6:
             if msgLen == 1:

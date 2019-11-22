@@ -55,7 +55,7 @@ while True:
         client.createRoom()
     elif event == 'View current rooms':
         client.roomInfo()
-    elif event == 'members':
+    elif event == 'List Members':
         client.listMembers()
     elif event == 'chat':
         client.turnOnChat()
