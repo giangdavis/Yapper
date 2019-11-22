@@ -6,7 +6,6 @@ import select
 PORT = 55555
 MAX_MESSAGE_LENGTH = 4096
 MAX_CLIENTS = 15
-
 ''' TO DO :  
 Server disconnecting from clients 
 Client/Server "gracefully" handling crashes 
@@ -294,13 +293,19 @@ class Lobby:
                 self.invalidCommand(user)
 
         elif "$members" in msg and commandLen == 8:
-            if msgLen == 2:
-                roomName = msgArr[1]
-                if roomName in self.rooms:
-                    room = self.rooms[roomName]
-                    room.printMembers(user)
-                else:
-                    self.invalidCommand(user)
+            if msgLen == 1:
+                #roomName = msgArr[1]
+                #if roomName in self.rooms:
+                #room = self.rooms[roomName]
+                #room.printMembers(user)
+                #else:
+                #self.invalidCommand(user)
+
+                for userRoom in user.rooms:
+                 if user.rooms[userRoom]:
+                     member = user.name + " "
+                     user.socket.sendall(member.encode())
+
             else:
                 self.invalidCommand(user)
 
