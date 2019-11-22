@@ -71,15 +71,16 @@ class Client:
 
     def displayRooms(self, msg):
         arr = msg.split(" ")
+        rooms = {arr[1]} # set room for fast look ups
 
-        rooms = {str(arr[1])} # set room for fast look ups
-        # rooms = {'Fuck', 'Shit', 'Hello'}
-
-        if len(arr) > 1:
+        if len(arr) > 2:
             for currentRoomName in arr[2:]:
                 rooms.add(currentRoomName)
+        arr = []
+        for room in rooms:
+            arr.append(room)
 
-        layout = [[self.roomBt(rooms)]] # add refresh button
+        layout = [[self.roomBt(arr)]] # add refresh button
         window = sg.Window('Rooms', layout, size=(150,225))
 
         while True:
@@ -92,10 +93,7 @@ class Client:
     # ===========================================================================
 
     def roomBt(self, rooms):
-        arr = []
-        for room in rooms:
-            arr.append(room)
-        return sg.Listbox(key='ROOMS',values=arr, right_click_menu=['Join'], size=(100, 200), enable_events=True)
+        return sg.Listbox(key='ROOMS', values=rooms, right_click_menu=['Join'], size=(100, 200), enable_events=True)
 
     # ===========================================================================
 
