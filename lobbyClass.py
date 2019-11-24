@@ -1,22 +1,23 @@
 import re
 import roomClass
 
-NAMECHANGE = "$name name [Changes username]\n"
-NEWROOM = "$Room roomname [Creates/Joins Room]\n"
+# NAMECHANGE = "$name name [Changes username]\n"
+NEWROOM = "$room roomname [Creates/Joins Room]\n"
 LEAVE = "$leave roomname [Removes user from room]\n"
 MEMBERS = "$members roomname [List members of room]\n"
 EXIT = "$exit [disconnects from server]"
-ROOMS = "$rooms [list all rooms in the lobby]\n"
+LOBBY = "$lobby [list all rooms in the lobby]\n"
 COMMAND = "$commands [displays commands]\n"
 CHATIN = "$chat roomname [to start sending messages to a room(s)]\n"
-COMMANDS = "All available commands:\n" + NAMECHANGE + NEWROOM + LEAVE + MEMBERS + ROOMS + COMMAND + CHATIN
+EXIT = "$exit [disconnects from server]\n"
+COMMANDS = "All available commands:\n" +  NEWROOM + LEAVE + MEMBERS + LOBBY + COMMAND + CHATIN + EXIT
 
 class Lobby:
     def __init__(self):
         self.rooms = {}  # {room name : room}
 
     def invalidCommand(self, user):
-        user.socket.sendall(b'Invalid command')
+        user.socket.sendall(b'Invalid command\n')
 
     def promptForName(self, user):
         user.socket.sendall(b'You have successfully connected to the Lobby!!! What is your name?\n')
@@ -34,6 +35,32 @@ class Lobby:
                 msg = room
                 user.socket.sendall(room.encode())
 
+    def removeUser(self, user): # server removing user
+        for roomName in user.rooms: # loops through the users rooms
+            room = self.rooms.get(roomName) # grabs the room
+            room.removeUser(user) # removes user frm the room
+        user.socket.sendall(b'$$exit')
+        if len(room.users) == 0:
+            self.rooms.pop(roomName)
+
+    def exit(self, user):
+        self.removeUser(user)
+
+    def leaveRoom(self, user, roomname):
+        if roomname in self.rooms:
+            room = self.rooms[roomname]
+            user.socket.sendall(b'You have left the room: ' + roomname.encode())
+            if room.removeUser(user) == 0:  # empty room now
+                self.rooms.pop(roomname)
+
+    # def roomCommand(self):
+
+    # creates a new user
+    def newUser(self, user, username):
+        user.setName(username)
+        print("NEW USER: " + username)
+        user.socket.sendall(b'Username setting successful! Type $commands for a Command List\n')
+
     def handle(self, user, msg):
         msgLen = len(re.findall(r'\w+', msg))  # returns an int
         msgArr = msg.split(" ")   # returns a list
@@ -41,19 +68,15 @@ class Lobby:
         print("command length = " + str(commandLen))
         print("msg length = " + str(msgLen))
         if "$newuser" in msg:
-            # parse name from msg
             if msgLen == 2:  # argument check
-                print(msgArr[1])
-                user.setName(msgArr[1])
-                print("New user: " + user.getName())
-                user.socket.sendall(b'Username setting successful! Type $commands for a command list\n')
+                self.newUser(user, msgArr[1])
             else:
-                user.socket.sendall(b'Username setting unsuccessful, please try again with the $changeName command\n')
+                user.socket.sendall(b'Username setting unsuccessful. Connect Again!')
 
         elif "$commands" in msg and commandLen == 10:
             user.socket.sendall(COMMANDS.encode())
 
-        elif "$rooms" in msg and commandLen == 7:
+        elif "$lobby" in msg and commandLen == 7:
             if msgLen == 1:
                 self.listRooms(user)
             else:
@@ -76,7 +99,7 @@ class Lobby:
                         room.addUser(user)
                         room.printUsers()
                         user.addRoom(roomName)
-                        welcome = user.name + ":has joined the room!\n"
+                        welcome = user.name + ": has joined the room!\n"
                         room.broadcast(welcome)
                         user.socket.sendall(b'You now receive messages from this room, to chat in this room: use the command $chat\n')
                 else:  # new room TO DO turn into function
@@ -84,7 +107,7 @@ class Lobby:
                     newRoom.addUser(user)
                     self.rooms[roomName] = newRoom
                     user.addRoom(roomName)
-                    welcome = user.name + ":has joined the room!\n"
+                    welcome = user.name + ": has joined the room!\n"
                     print("created a new room: " + roomName)
                     newRoom.printUsers()
                     user.socket.sendall(b'You now receive messages from this room, to chat in this room: use the command $chat\n')
@@ -115,17 +138,7 @@ class Lobby:
 
         elif "$leave" in msg and commandLen == 6:
             if msgLen == 2:
-                roomName = msgArr[1]
-                if roomName in self.rooms:  # found the room user is trying to leave
-                    room = self.rooms[roomName]  # grab the room
-                    room.removeUser(user)  # remove user from the room
-                    user.leaveRoom(roomName)  # remove room from the user
-                    if len(room.users) == 0:  # room is now empty, remove from rooms
-                        print("before pop")
-                        self.rooms.pop(roomName)
-                    else:
-                        room.broadcast(user.name + " has left the room\n")
-                    user.socket.sendall(b'You left room: ' + roomName.encode())
+                self.leaveRoom(user, msgArr[1])
             else:
                 self.invalidCommand(user)
 
@@ -152,20 +165,8 @@ class Lobby:
 
         elif "$exit" in msg and commandLen == 6:
             if msgLen == 1:
-                if len(user.rooms) > 0:
-                    for currentRoomName in user.rooms:  # go through the rooms the user is in
-                        # remove user from the room
-                        if currentRoomName in self.rooms:
-                            room = self.rooms[currentRoomName]
-                            room.removeUser(user)
-                            if len(room.users) == 0:
-                                self.rooms.pop(currentRoomName)  # check if room is empty, turn this into func
-                                print("room: " + currentRoomName + " is empty, closing it off.\n")
-                            else:
-                                room.broadcast(user.name + " has left the room\n")
-                user.socket.sendall(b'$exit')
+                self.exit(user)
             else:
-                print("check")
                 self.invalidCommand(user)
 
         else:
@@ -174,7 +175,5 @@ class Lobby:
             else:
                 for i in user.rooms:  # loop through the rooms that the user is in
                     if user.rooms.get(i):  # the user is actively chatting in this room
-                        print("works")
                         room = self.rooms.get(i)
-                        print("worksx2")
                         room.broadcast(msg)

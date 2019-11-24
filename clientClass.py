@@ -1,6 +1,6 @@
 import socket, select, sys
 
-PORT = 55555
+PORT = 50000
 MAX_MESSAGE_LENGTH = 4096
 
 class Client:
@@ -21,13 +21,18 @@ class Client:
                     encodedMsg = notifiedSocket.recv(MAX_MESSAGE_LENGTH)
                     msg = encodedMsg.decode()
                     if msg: # incoming message
-                        if msg == '$exit':
+                        if msg == '$$exit':
                             sys.stdout.write("Successfully disconnected from the server.\n")
+                            self.socket.close()
                             sys.exit() # successful termination
                         elif "You have successfully connected to the Lobby!!! What is your name?" in msg:
                             first = True
                         sys.stdout.write(msg)
                         sys.stdout.flush()
+                    elif msg == "Username setting unsuccessful. Connect Again!":
+                        sys.stdout.write(msg)
+                        self.socket.close()
+                        sys.exit(2)
                     else: # msg contained 0 bytes, disconnected
                         print('Connection closed!')
                         self.socket.close()

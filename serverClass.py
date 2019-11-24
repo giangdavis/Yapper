@@ -75,6 +75,8 @@ class Server:
                             lobby.handle(notified_socket, newMsg.decode().lower())  # ERR
                         else:  # recv sent 0 bytes, closed connection
                             print("Closed a connection")
+                            if len(notified_socket.rooms) != 0:
+                              lobby.removeUser(notified_socket)
                             if notified_socket in self.socketList:
                                 self.socketList.remove(notified_socket)
                     except:
