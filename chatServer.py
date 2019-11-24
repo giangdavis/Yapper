@@ -1,8 +1,23 @@
-import socket, sys, select
+import socket
+import sys
+import select
+#from serverClass
+import serverClass
 
-from chatClasses import User, Room, Lobby
-import chatClasses
+#import chatClasses
 
+# get the host IP address and start listening for connections
+
+arguments = len(sys.argv) - 1
+if arguments == 1:
+    hostAddr = sys.argv[1]
+else:
+    hostAddr = '127.0.0.1'  # if no argument, default to local host
+
+s = serverClass.Server()
+s.run(hostAddr)
+
+'''
 # get the host IP address and start listening for connections
 
 arguments = len(sys.argv) - 1
@@ -48,3 +63,4 @@ while True:
             except:
                 print("Connection to client has been broken")
                 chatClasses.SERVERSOCKETLIST.remove(notified_socket)
+                '''
