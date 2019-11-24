@@ -53,7 +53,22 @@ class Lobby:
             if room.removeUser(user) == 0:  # empty room now
                 self.rooms.pop(roomname)
 
-    # def roomCommand(self):
+    def roomCommand(self, user, msgArr):
+        for roomName in msgArr[1:]:
+            print(user.name + "trying to create/join: " + roomName)
+            if roomName in self.rooms:  # existing room
+                room = self.rooms[roomName]
+                if user in room.users:
+                    user.socket.sendall(b'You are already in a room you tried to create/join\n')
+                else:
+                    newMsg = "You just joined " + roomName + 'Use "$chat roomname" to talk!\n'
+                    user.socket.sendall(newMsg.encode())
+            else: # new room
+                newRoom = roomClass.Room(roomName)
+                newRoom.addUser(user)
+                self.rooms[roomName] = newRoom
+                user.addRoom(roomName)
+                user.socket.sendall(b'Room Creation Successful! Use "$chat roomname" to talk in here!\n')
 
     # creates a new user
     def newUser(self, user, username):
@@ -83,51 +98,11 @@ class Lobby:
                 self.invalidCommand(user)
 
         elif "$room" in msg and commandLen == 5: # cases : no room, existing room, existing room and user is already in there
-            # how many rooms is the users trying to join ?
-            # join rooms that exist and create rooms that don't
-            # TODO shorten, optimize this code.
-            if msgLen == 2:  # argument check
-                # See if there is an existing room
-                roomName = msgArr[1]
-                print("Looking for room: " + roomName)
-                if roomName in self.rooms:  # trying to join an existing room
-                    print("check")
-                    room = self.rooms[roomName]
-                    if user in room.users:  # user is already in the room
-                        user.socket.sendall(b"You're already in this room!\n")
-                    else:
-                        room.addUser(user)
-                        room.printUsers()
-                        user.addRoom(roomName)
-                        welcome = user.name + ": has joined the room!\n"
-                        room.broadcast(welcome)
-                        user.socket.sendall(b'You now receive messages from this room, to chat in this room: use the command $chat\n')
-                else:  # new room TO DO turn into function
-                    newRoom = roomClass.Room(roomName)  # might be fooked
-                    newRoom.addUser(user)
-                    self.rooms[roomName] = newRoom
-                    user.addRoom(roomName)
-                    welcome = user.name + ": has joined the room!\n"
-                    print("created a new room: " + roomName)
-                    newRoom.printUsers()
-                    user.socket.sendall(b'You now receive messages from this room, to chat in this room: use the command $chat\n')
-            elif msgLen > 2:  # user is trying to join multiple rooms
-                for currentRoomName in msgArr[1:]:
-                    print(currentRoomName)
-                    if currentRoomName in self.rooms:
-                        room = self.rooms[currentRoomName]
-                        welcome = user.name + ":has joined the room!\n"
-                        room.broadcast(welcome)
-                        user.socket.sendall(b'You now receive messages from this room, to chat in this room: use the command $chat\n')
-                    else:
-                        newRoom = roomClass(currentRoomName)
-                        newRoom.addUser(user)
-                        self.rooms[currentRoomName] = newRoom
-                        print("created a new room:" + currentRoomName)
-                        newRoom.printUsers()
-                        user.socket.sendall(b'You now receive messages from this room, to chat in this room: use the command $chat\n')
+            if msgLen >= 2:  # argument check
+                self.roomCommand(user, msgArr)
             else:
                 user.socket.sendall(b'Room Join/Create failed. Try Again.')
+
 
         elif "$sendall" in msg and commandLen == 8:  # broadcast to all current rooms
             if msgLen > 1:

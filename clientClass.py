@@ -27,12 +27,12 @@ class Client:
                             sys.exit() # successful termination
                         elif "You have successfully connected to the Lobby!!! What is your name?" in msg:
                             first = True
+                        elif msg == "Username setting unsuccessful. Connect Again!":
+                            sys.stdout.write(msg)
+                            self.socket.close()
+                            sys.exit(2)
                         sys.stdout.write(msg)
                         sys.stdout.flush()
-                    elif msg == "Username setting unsuccessful. Connect Again!":
-                        sys.stdout.write(msg)
-                        self.socket.close()
-                        sys.exit(2)
                     else: # msg contained 0 bytes, disconnected
                         print('Connection closed!')
                         self.socket.close()
