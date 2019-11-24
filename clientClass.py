@@ -14,37 +14,45 @@ class Client:
 
     def runChat(self):
         first = False
-        while True:
-            readables, _, _ = select.select(self.connectionList, [], [])
-            for notifiedSocket in readables:
-                if notifiedSocket is self.socket: # new msg
-                    encodedMsg = notifiedSocket.recv(MAX_MESSAGE_LENGTH)
-                    msg = encodedMsg.decode()
-                    if msg: # incoming message
-                        if msg == '$$exit':
-                            sys.stdout.write("Successfully disconnected from the server.\n")
-                            self.socket.close()
-                            sys.exit() # successful termination
-                        elif "You have successfully connected to the Lobby!!! What is your name?" in msg:
-                            first = True
-                        elif msg == "Username setting unsuccessful. Connect Again!":
+        try:
+            while True:
+                readables, _, _ = select.select(self.connectionList, [], [])
+                for notifiedSocket in readables:
+                    if notifiedSocket is self.socket:  # new msg
+                        encodedMsg = notifiedSocket.recv(MAX_MESSAGE_LENGTH)
+                        msg = encodedMsg.decode()
+                        if msg:  # incoming message
+                            #try:
+                            if msg == '$$exit':
+                                sys.stdout.write("Successfully disconnected from the server.\n")
+                                self.socket.close()
+                                sys.exit()  # successful termination
+                            elif "You have successfully connected to the Lobby!!! What is your name?" in msg:
+                                first = True
+                            elif msg == "Username setting unsuccessful. Connect Again!":
+                                #sys.stdout.write(msg)
+                                self.socket.close()
+                                sys.exit(2)
+                                #raise Exception("Username setting unsuccessful")
                             sys.stdout.write(msg)
+                            sys.stdout.flush()
+                        else:  # msg contained 0 bytes, disconnected
+                            print('Connection closed!')
                             self.socket.close()
-                            sys.exit(2)
-                        sys.stdout.write(msg)
+                            sys.exit()  # find error code
+                        #except Exception as fuk:
+                        #    print(fuk)
+                    else:  # std in detected, send msg to server
+                        if first == True:
+                            newMsg = '$newuser ' + sys.stdin.readline()
+                            first = False
+                        else:
+                            newMsg = sys.stdin.readline()
+                        self.socket.sendall(newMsg.encode())
                         sys.stdout.flush()
-                    else: # msg contained 0 bytes, disconnected
-                        print('Connection closed!')
-                        self.socket.close()
-                        sys.exit() # find error code
-                else: #std in detected, send msg to server
-                    if first == True:
-                        newMsg = '$newuser ' + sys.stdin.readline()
-                        first = False
-                    else:
-                        newMsg = sys.stdin.readline()
-                    self.socket.sendall(newMsg.encode())
-                    sys.stdout.flush()
+        except SystemExit as fuk:
+            if fuk.code == 2:
+                print("Username setting unsuccessful")
 
     def start(self, ip):
         try:
