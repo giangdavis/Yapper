@@ -1,3 +1,5 @@
+import datetime
+
 class Room:
     def __init__(self, name, password=""):
         self.users = []   # a list of sockets
@@ -12,9 +14,11 @@ class Room:
         for x in self.users:
             print(x.getName() + ' ')
 
-    def broadcast(self, msg):
+    def broadcast(self, user, msg):
+        time = datetime.datetime.now()
+        timeStr = time.strftime("%I") + ":" + time.strftime("%M") + " " + time.strftime("%p ")
         for x in self.users:
-            x.socket.sendall(msg.encode())
+            x.socket.sendall(timeStr.encode() + user.name.encode() + b': ' + msg.encode())
 
     def removeUser(self, user): # user leaving the room
         self.users.remove(user)
@@ -24,6 +28,11 @@ class Room:
         return 0
 
     def printMembers(self, user):  # to send the client users of room
+        first = True
         for x in self.users:
-            member = x.name
-            user.socket.sendall(member.encode())
+            if first == True:
+                msg = x.name
+                first = False
+            else:
+                msg = msg + ", " + x.name
+        user.socket.sendall(b'The users in the room ' + self.name.encode() + b' are: ' + msg.encode())

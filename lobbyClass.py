@@ -1,27 +1,27 @@
 import re
 import roomClass
 
-# NAMECHANGE = "$name name [Changes username]\n"
+# NAMECHANGE = "$name name [Changes username]"
 NEWROOM = "$room roomname [Creates/Joins Room]\n"
 LEAVE = "$leave roomname [Removes user from room]\n"
 MEMBERS = "$members roomname [List members of room]\n"
-EXIT = "$exit [disconnects from server]"
+EXIT = "$exit [disconnects from server]\n"
 LOBBY = "$lobby [list all rooms in the lobby]\n"
 COMMAND = "$commands [displays commands]\n"
 CHATIN = "$chat roomname [to start sending messages to a room(s)]\n"
 EXIT = "$exit [disconnects from server]\n"
 YAP = "$yap roomname1 roomname2 ... roomnameX ~message~ [sends message to all rooms specified]\n"
-COMMANDS = "All available commands:\n" +  NEWROOM + LEAVE + MEMBERS + LOBBY + COMMAND + CHATIN + EXIT + YAP
+COMMANDS = "All available commands:" +  NEWROOM + LEAVE + MEMBERS + LOBBY + COMMAND + CHATIN + EXIT + YAP
 
 class Lobby:
     def __init__(self):
         self.rooms = {}  # {room name : room}
 
     def invalidCommand(self, user):
-        user.socket.sendall(b'Invalid command\n')
+        user.socket.sendall(b'Invalid command')
 
     def promptForName(self, user):
-        user.socket.sendall(b'You have successfully connected to the Lobby!!! What is your name?\n')
+        user.socket.sendall(b'You have successfully connected to the Lobby!!! What is your name?')
 
     def printRooms(self):
         print("Rooms: ")
@@ -30,11 +30,16 @@ class Lobby:
 
     def listRooms(self, user):
         if len(self.rooms) == 0:  # no rooms to list:
-            user.socket.sendall(b'There are no rooms right now.\n')
+            user.socket.sendall(b'There are no rooms right now.')
         else:
+            first = True
             for room in self.rooms:
-                msg = room
-                user.socket.sendall(room.encode())
+                if first == True:
+                    msg = room
+                    first = False
+                else:
+                    msg = msg + ", " + room
+            user.socket.sendall(b'Current Rooms in the Lobby: ' + msg.encode())
 
     def removeUser(self, user): # server removing user
         for roomName in user.rooms: # loops through the users rooms
@@ -56,65 +61,55 @@ class Lobby:
 
     def roomCommand(self, user, msgArr):
         for roomName in msgArr[1:]:
-            print(user.name + "trying to create/join: " + roomName)
+            print(user.name + " trying to create/join: " + roomName)
             if roomName in self.rooms:  # existing room
                 room = self.rooms[roomName]
                 if user in room.users:
-                    user.socket.sendall(b'You are already in a room you tried to create/join\n')
+                    user.socket.sendall(b'You are already in a room you tried to create/join')
                 else:
-                    newMsg = "You just joined " + roomName + 'Use "$chat roomname" to talk!\n'
+                    room.addUser(user)
+                    user.addRoom(roomName)
+                    newMsg = "You just joined " + roomName + ' Use "$chat roomname" to talk!'
                     user.socket.sendall(newMsg.encode())
             else: # new room
                 newRoom = roomClass.Room(roomName)
                 newRoom.addUser(user)
                 self.rooms[roomName] = newRoom
                 user.addRoom(roomName)
-                user.socket.sendall(b'Room Creation Successful! Use "$chat roomname" to talk in here!\n')
+                user.socket.sendall(b'Room Creation Successful! Use "$chat roomname" to talk in here!')
 
     # creates a new user
     def newUser(self, user, username):
         user.setName(username)
         print("NEW USER: " + username)
-        user.socket.sendall(b'Username setting successful! Type $commands for a Command List\n')
+        user.socket.sendall(b'Username setting successful! Type $commands for a Command List')
 
-    def validYapMsg(self, msgArr):
+    def getYapMsg(self, msgArr):
         tildeCount = 0
-        tilde = True
+        yap = ""
         first = True
-        for x in msgArr[1:]:
-            if '~~~' in x:
-                if tilde == True:
-                    index = msgArr.index(x)
-                    tilde = False
-                if len(x) >= 3:
-                    tildeCount = tildeCount + 1
-                else:
-                    count = x.count('~')
-                    if count >= 6:
-                        tildeCount = 2
-                        break
+        for word in msgArr:
+            if '~~~' in word:
+                if first == True:
+                    startMsg = msgArr.index(word)
+                    first = False
+                tildeCount = tildeCount + 3
+                if len(word) > 3 and 6 > tildeCount:
+                    for char in word[3:]:
+                        if char == '~':
+                            tildeCount = tildeCount + 1
 
-        if tildeCount >= 2:
-            lastTilde = msgArr[len(msgArr)-1]
-            yap = ""
-            if '~~~' in lastTilde:
-                for word in msgArr[index:]:
-                    if '~~~' in word:
-                        if len(word) > 3:
-                            a = word.split("~~~")
-                            if '' in a:
-                                a.remove('')
-                            if '\n' in a:
-                                a.remove('\n')
-                            yap = yap + a[0]
-                            first == False
-                    else:
-                        if first == True:
-                            yap = word
-                            first == False
-                        else:
-                            yap = yap + " " + word
+        if tildeCount == 6:
+            first = True
+            for x in msgArr[startMsg:]:
+                if first == True:
+                    yap = x
+                    first = False
+                else:
+                    yap = yap + " " + x
+
         return yap
+
 
     def yap(self, user, msgArr, msgLen):
         # check argument length
@@ -122,16 +117,14 @@ class Lobby:
         success = False
         if msgLen > 2:
             # check for valid message
-            msgToYap = self.validYapMsg(msgArr)
+            msgToYap = self.getYapMsg(msgArr)
             if msgToYap != "":
                 print("MSG TO YAP : " + msgToYap + "\n")
                 for roomName in msgArr[1:]:
-                    if '~~~' in roomName:
-                        break
                     if roomName in self.rooms:
                         room = self.rooms[roomName]
                         print ("Yapping to : " + roomName + "\n" )
-                        room.broadcast(msgToYap)
+                        room.broadcast(user, msgToYap)
                         success = True
         if not success:
             self.invalidCommand(user)
@@ -191,9 +184,9 @@ class Lobby:
                 if roomName in self.rooms:
                     if roomName in user.rooms:
                         user.rooms[roomName] = True
-                        user.socket.sendall(b'You are now able to chat in the desired room\n')
+                        user.socket.sendall(b'You are now able to chat in the desired room')
                     else:
-                        tStr = "The room " + roomName + " is not yet created. Use $room!\n"
+                        tStr = "The room " + roomName + " is not yet created. Or you're not in there. Use $room!"
                         user.socket.sendall(tStr.encode())
 
         elif "$exit" in msg and commandLen == 5:
@@ -209,4 +202,4 @@ class Lobby:
                 for i in user.rooms:  # loop through the rooms that the user is in
                     if user.rooms.get(i):  # the user is actively chatting in this room
                         room = self.rooms.get(i)
-                        room.broadcast(msg)
+                        room.broadcast(user, msg)

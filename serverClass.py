@@ -72,7 +72,7 @@ class Server:
                         print(newMsg.decode())
                         if newMsg:
                             print("sending msg to handler")
-                            lobby.handle(notified_socket, newMsg.decode().lower())  # ERR
+                            lobby.handle(notified_socket, newMsg.decode())
                         else:  # recv sent 0 bytes, closed connection
                             print("Closed a connection")
                             if len(notified_socket.rooms) != 0:
