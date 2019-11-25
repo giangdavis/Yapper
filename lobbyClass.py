@@ -10,7 +10,8 @@ LOBBY = "$lobby [list all rooms in the lobby]\n"
 COMMAND = "$commands [displays commands]\n"
 CHATIN = "$chat roomname [to start sending messages to a room(s)]\n"
 EXIT = "$exit [disconnects from server]\n"
-COMMANDS = "All available commands:\n" +  NEWROOM + LEAVE + MEMBERS + LOBBY + COMMAND + CHATIN + EXIT
+YAP = "$yap roomname1 roomname2 ... roomnameX ~message~ [sends message to all rooms specified]\n"
+COMMANDS = "All available commands:\n" +  NEWROOM + LEAVE + MEMBERS + LOBBY + COMMAND + CHATIN + EXIT + YAP
 
 class Lobby:
     def __init__(self):
@@ -76,7 +77,69 @@ class Lobby:
         print("NEW USER: " + username)
         user.socket.sendall(b'Username setting successful! Type $commands for a Command List\n')
 
+    def validYapMsg(self, msgArr):
+        tildeCount = 0
+        tilde = True
+        first = True
+        for x in msgArr[1:]:
+            if '~~~' in x:
+                if tilde == True:
+                    index = msgArr.index(x)
+                    tilde = False
+                if len(x) >= 3:
+                    tildeCount = tildeCount + 1
+                else:
+                    count = x.count('~')
+                    if count >= 6:
+                        tildeCount = 2
+                        break
+
+        if tildeCount >= 2:
+            lastTilde = msgArr[len(msgArr)-1]
+            yap = ""
+            if '~~~' in lastTilde:
+                for word in msgArr[index:]:
+                    if '~~~' in word:
+                        if len(word) > 3:
+                            a = word.split("~~~")
+                            if '' in a:
+                                a.remove('')
+                            if '\n' in a:
+                                a.remove('\n')
+                            yap = yap + a[0]
+                            first == False
+                    else:
+                        if first == True:
+                            yap = word
+                            first == False
+                        else:
+                            yap = yap + " " + word
+        return yap
+
+    def yap(self, user, msgArr, msgLen):
+        # check argument length
+        print("LENGTH OF ARR TO YAP: " + str(msgLen) + "\n")
+        success = False
+        if msgLen > 2:
+            # check for valid message
+            msgToYap = self.validYapMsg(msgArr)
+            if msgToYap != "":
+                print("MSG TO YAP : " + msgToYap + "\n")
+                for roomName in msgArr[1:]:
+                    if '~~~' in roomName:
+                        break
+                    if roomName in self.rooms:
+                        room = self.rooms[roomName]
+                        print ("Yapping to : " + roomName + "\n" )
+                        room.broadcast(msgToYap)
+                        success = True
+        if not success:
+            self.invalidCommand(user)
+
+
     def handle(self, user, msg):
+        msg = msg.rsplit('\n')
+        msg = msg[0]
         msgLen = len(re.findall(r'\w+', msg))  # returns an int
         msgArr = msg.split(" ")   # returns a list
         commandLen = len(msgArr[0])  # length of "$usersommand"
@@ -88,10 +151,10 @@ class Lobby:
             else:
                 user.socket.sendall(b'Username setting unsuccessful. Connect Again!')
 
-        elif "$commands" in msg and commandLen == 10:
+        elif "$commands" in msg and commandLen == 9:
             user.socket.sendall(COMMANDS.encode())
 
-        elif "$lobby" in msg and commandLen == 7:
+        elif "$lobby" in msg and commandLen == 6:
             if msgLen == 1:
                 self.listRooms(user)
             else:
@@ -103,13 +166,8 @@ class Lobby:
             else:
                 user.socket.sendall(b'Room Join/Create failed. Try Again.')
 
-
-        elif "$sendall" in msg and commandLen == 8:  # broadcast to all current rooms
-            if msgLen > 1:
-                newMsg = msg[9:] + "\n"
-                for currentRoom in user.rooms:
-                    if currentRoom in self.rooms:
-                        self.rooms[currentRoom].broadcast(newMsg)
+        elif "$yap" in msg and commandLen == 4:
+            self.yap(user, msgArr, msgLen)
 
         elif "$leave" in msg and commandLen == 6:
             if msgLen == 2:
@@ -138,7 +196,7 @@ class Lobby:
                         tStr = "The room " + roomName + " is not yet created. Use $room!\n"
                         user.socket.sendall(tStr.encode())
 
-        elif "$exit" in msg and commandLen == 6:
+        elif "$exit" in msg and commandLen == 5:
             if msgLen == 1:
                 self.exit(user)
             else:

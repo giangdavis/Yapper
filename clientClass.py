@@ -34,6 +34,7 @@ class Client:
                                 self.socket.close()
                                 sys.exit(2)
                                 #raise Exception("Username setting unsuccessful")
+                            msg = msg + '\n'
                             sys.stdout.write(msg)
                             sys.stdout.flush()
                         else:  # msg contained 0 bytes, disconnected
@@ -48,6 +49,7 @@ class Client:
                             first = False
                         else:
                             newMsg = sys.stdin.readline()
+                        newMsg.rstrip()
                         self.socket.sendall(newMsg.encode())
                         sys.stdout.flush()
         except SystemExit as fuk:
