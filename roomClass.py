@@ -6,8 +6,16 @@ class Room:
         self.name = name
         self.password = password
 
+    def __del__(self):
+        print("deleted room: " + self.name + '\n')
+
     def addUser(self, user):
         self.users.append(user)
+
+    def clean(self):
+        for user in self.users:
+            user.socket.sendall(b'The server has shut down :(')
+            user.socket.close()
 
     def printUsers(self):  # for server use only
         print("Users in room: " + self.name + " ")
@@ -18,7 +26,8 @@ class Room:
         time = datetime.datetime.now()
         timeStr = time.strftime("%I") + ":" + time.strftime("%M") + " " + time.strftime("%p ")
         for x in self.users:
-            x.socket.sendall(timeStr.encode() + user.name.encode() + b': ' + msg.encode())
+            x.socket.sendall(b'From Room: ' + self.name.encode() + b'\n' + timeStr.encode() +
+                             user.name.encode() + b': ' + msg.encode())
 
     def removeUser(self, user): # user leaving the room
         self.users.remove(user)

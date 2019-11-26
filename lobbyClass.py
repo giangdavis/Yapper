@@ -17,6 +17,15 @@ class Lobby:
     def __init__(self):
         self.rooms = {}  # {room name : room}
 
+    def __del__(self):
+        print("Lobby closed\n")
+
+    def disconnectFromClients(self):
+        for roomName in self.rooms:
+            room = self.rooms[roomName]
+            room.clean()
+            del room
+
     def invalidCommand(self, user):
         user.socket.sendall(b'Invalid command')
 
@@ -107,7 +116,8 @@ class Lobby:
                     first = False
                 else:
                     yap = yap + " " + x
-
+            yap = yap.replace('~~~', ' ')
+            yap = yap.strip()
         return yap
 
 

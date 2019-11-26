@@ -5,6 +5,9 @@ class User:
         self.name = name
         self.rooms = {}  # {RoomName : Bool} Bool = user is sending msgs to room
 
+    def __del__(self):
+        print("Deleted the user: " + self.name + '\n')
+
     def setName(self, newName):
         self.name = newName
 

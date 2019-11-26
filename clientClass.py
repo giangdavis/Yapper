@@ -51,7 +51,8 @@ class Client:
                             newMsg = sys.stdin.readline()
                         newMsg.rstrip()
                         self.socket.sendall(newMsg.encode())
-                        sys.stdout.flush()
+                        print("\033[A                             \033[A")
+                        # sys.stdout.flush()
         except SystemExit as fuk:
             if fuk.code == 2:
                 print("Username setting unsuccessful")

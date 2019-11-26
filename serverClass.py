@@ -29,6 +29,7 @@ class Server:
         self.socket.setblocking(False)  # turns off socket blocking
         self.socketList = []
         self.socketList.append(self.socket)
+        self.socketList.append(sys.stdin)
 
         #self.socket.bind((hostAddr, chatClasses.PORT))  # assigns host ip add and port to socket
 
@@ -66,6 +67,12 @@ class Server:
                     #self.socketList.append(newUser.socket)
                     # clients.append(newUser)
                     lobby.promptForName(newUser)  # ERR
+                elif notified_socket is sys.stdin:
+                    command = sys.stdin.readline()
+                    if command == 'quit\n':
+                        lobby.disconnectFromClients()
+                        del lobby
+                        sys.exit(0)
                 else:
                     try:
                         newMsg = notified_socket.socket.recv(MAX_MESSAGE_LENGTH)
