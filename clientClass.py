@@ -49,6 +49,8 @@ class Client:
                             first = False
                         else:
                             newMsg = sys.stdin.readline()
+                            # if newMsg[0:5] == "$file":
+                                # open file and transfer
                         newMsg.rstrip()
                         self.socket.sendall(newMsg.encode())
                         print("\033[A                             \033[A")
