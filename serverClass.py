@@ -60,12 +60,7 @@ class Server:
             readables, writables, exceptionals = select.select(self.socketList, [], [])
             for notified_socket in readables:
                 if notified_socket is self.socket:  # new connection
-                    #newSocket, addr = notified_socket.accept()
-                    #newUser = User(newSocket, "")  # ERR
-                    # newUser.fileno()
                     newUser = self.addClient()
-                    #self.socketList.append(newUser.socket)
-                    # clients.append(newUser)
                     lobby.promptForName(newUser)  # ERR
                 elif notified_socket is sys.stdin:
                     command = sys.stdin.readline()
@@ -82,6 +77,7 @@ class Server:
                             lobby.handle(notified_socket, newMsg.decode())
                         else:  # recv sent 0 bytes, closed connection
                             print("Closed a connection")
+                            lobby.users.remove(notified_socket)
                             if len(notified_socket.rooms) != 0:
                               lobby.removeUser(notified_socket)
                             if notified_socket in self.socketList:

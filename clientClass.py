@@ -11,6 +11,22 @@ class Client:
 
     def __del__(self):
         self.name = ""
+    
+    def openFile(self, path, username): 
+        filename = path
+        print(filename)
+        try:
+            f = open(filename.strip('\n'))
+            a = f.readlines()
+            contents = "$file " + username 
+            for line in a:
+                contents = contents + line
+            print(contents)
+            f.close()
+        except FileNotFoundError:
+            print('File does not exist.\n')
+        
+        return contents 
 
     def runChat(self):
         first = False
@@ -49,9 +65,11 @@ class Client:
                             first = False
                         else:
                             newMsg = sys.stdin.readline()
-                            # if newMsg[0:5] == "$file":
-                                # open file and transfer
-                        newMsg.rstrip()
+                            if newMsg[0:5] == "$file":
+                                print("\033[A                             \033[A")
+                                msgArr = newMsg.split(" ")
+                                newMsg = self.openFile(msgArr[1], msgArr[2])
+                        newMsg = newMsg.rstrip()
                         self.socket.sendall(newMsg.encode())
                         print("\033[A                             \033[A")
                         # sys.stdout.flush()

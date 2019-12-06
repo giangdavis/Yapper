@@ -12,8 +12,9 @@ COMMAND = "$commands [displays commands]\n"
 CHATIN = "$chat roomname [to start sending messages to a room(s)]\n"
 EXIT = "$exit [disconnects from server]\n"
 YAP = "$yap roomname1 roomname2 ... roomnameX ~~~message~~~ [sends message to all rooms specified]\n"
-PRIVATEMSG = "$msg username ~~~message~~~\n"
-COMMANDS = "All available commands:" +  NEWROOM + LEAVE + MEMBERS + LOBBY + COMMAND + CHATIN +  YAP + PRIVATEMSG + EXIT
+PRIVATEMSG = "$msg username ~~~message~~~ [send a private msg(enclose with 3 tildes) to 'username']\n"
+FILE = "$file filename username [send a file from filepath to 'username']\n"
+COMMANDS = "All available commands:" +  NEWROOM + LEAVE + MEMBERS + LOBBY + COMMAND + CHATIN +  YAP + PRIVATEMSG + EXIT + FILE
 
 class Lobby:
     def __init__(self):
@@ -221,7 +222,7 @@ class Lobby:
             else:
                 self.invalidCommand(user)
 
-        elif "$chat" in msg and commandLen == 5 and msgLen == 3 :  
+        elif "$chat" in msg and commandLen == 5 and msgLen == 2 :  
             for roomName in msgArr:
                 if roomName in self.rooms:
                     if roomName in user.rooms:
