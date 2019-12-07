@@ -1,5 +1,4 @@
 import socket, select, sys
-import curses 
 
 PORT = 50000
 MAX_MESSAGE_LENGTH = 4096

@@ -9,12 +9,13 @@ MEMBERS = "$members roomname [List members of room]\n"
 EXIT = "$exit [disconnects from server]\n"
 LOBBY = "$lobby [list all rooms in the lobby]\n"
 COMMAND = "$commands [displays commands]\n"
-CHATIN = "$chat roomname [to start sending messages to a room(s)]\n"
+CHATIN = "$chat roomname [to start sending messages to a room]\n"
+CHATOFF = "$chatOff roomname [to turn off chat for a room]\n"
 EXIT = "$exit [disconnects from server]\n"
 YAP = "$yap roomname1 roomname2 ... roomnameX ~~~message~~~ [sends message to all rooms specified]\n"
 PRIVATEMSG = "$msg username ~~~message~~~ [send a private msg(enclose with 3 tildes) to 'username']\n"
 FILE = "$file filename username [send a file from filepath to 'username']\n"
-COMMANDS = "All available commands:\n" +  NEWROOM + LEAVE + MEMBERS + LOBBY + COMMAND + CHATIN +  YAP + PRIVATEMSG + EXIT + FILE
+COMMANDS = "All available commands:\n" +  NEWROOM + LEAVE + MEMBERS + LOBBY + COMMAND + CHATIN +  YAP + PRIVATEMSG + EXIT + FILE +  CHATOFF
 
 class Lobby:
     def __init__(self):
@@ -213,6 +214,13 @@ class Lobby:
             tStr = "The room " + roomName + " is not yet created. Or you're not in there. Use $room!"
             user.socket.sendall(tStr.encode()) 
 
+    def ChatOff(self, user, roomName):
+        if roomName in self.rooms and roomName in user.rooms:
+            user.rooms[roomName] = False
+            user.socket.sendall(b'You turned off chat for the desired room')
+        else:
+            self.invalidCommand(user)
+
     def handle(self, user, msg):
         #check for file transfers first 
         if "$file" in msg:
@@ -274,6 +282,9 @@ class Lobby:
                         self.invalidCommand(user)
                 else:
                     self.invalidCommand(user)
+
+            elif  "$chatOff" in msg and commandLen == 8 and msgLen == 2:
+                self.ChatOff(user, msgArr[1])
 
             elif "$chat" in msg and commandLen == 5 and msgLen == 2 :  
                 self.chatCommand(user, msgArr[1])
