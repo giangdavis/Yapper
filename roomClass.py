@@ -30,11 +30,14 @@ class Room:
                              user.name.encode() + b': ' + msg.encode())
 
     def removeUser(self, user): # user leaving the room
-        self.users.remove(user)
-        if len(self.users) != 0:
-            self.broadcast(user.name + " has left the room\n")
+        if user in self.users:
+            self.users.remove(user)
+        if len(self.users) == 0:
+            return 0
+        else:
+            for curr in self.users:
+                curr.socket.sendall(user.name.encode() + b' has left the room\n')
             return 1
-        return 0
 
     def printMembers(self, user):  # to send the client users of room
         first = True

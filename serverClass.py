@@ -77,11 +77,14 @@ class Server:
                             lobby.handle(notified_socket, newMsg.decode())
                         else:  # recv sent 0 bytes, closed connection
                             print("Closed a connection")
-                            lobby.users.remove(notified_socket)
-                            if len(notified_socket.rooms) != 0:
-                              lobby.removeUser(notified_socket)
+                            if notified_socket in lobby.users:
+                                lobby.removeUser(notified_socket)
                             if notified_socket in self.socketList:
                                 self.socketList.remove(notified_socket)
                     except:
+                        if notified_socket in lobby.users:
+                            lobby.removeUser(notified_socket)
+                        notified_socket.socket.sendall(b'$$exit')
                         print("Connection to client has been broken")
-                        self.socketList.remove(notified_socket)
+                        if notified_socket in self.socketList:
+                            self.socketList.remove(notified_socket)

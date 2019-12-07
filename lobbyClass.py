@@ -14,7 +14,7 @@ EXIT = "$exit [disconnects from server]\n"
 YAP = "$yap roomname1 roomname2 ... roomnameX ~~~message~~~ [sends message to all rooms specified]\n"
 PRIVATEMSG = "$msg username ~~~message~~~ [send a private msg(enclose with 3 tildes) to 'username']\n"
 FILE = "$file filename username [send a file from filepath to 'username']\n"
-COMMANDS = "All available commands:" +  NEWROOM + LEAVE + MEMBERS + LOBBY + COMMAND + CHATIN +  YAP + PRIVATEMSG + EXIT + FILE
+COMMANDS = "All available commands:\n" +  NEWROOM + LEAVE + MEMBERS + LOBBY + COMMAND + CHATIN +  YAP + PRIVATEMSG + EXIT + FILE
 
 class Lobby:
     def __init__(self):
@@ -57,21 +57,24 @@ class Lobby:
     def removeUser(self, user): # server removing user
         for roomName in user.rooms: # loops through the users rooms
             room = self.rooms.get(roomName) # grabs the room
-            room.removeUser(user) # removes user frm the room
-        self.users.remove(user)
+            if room.removeUser(user) == 0:# removes user frm the room
+                self.rooms.pop(roomName)
         user.socket.sendall(b'$$exit')
-        if len(room.users) == 0:
-            self.rooms.pop(roomName)
+        if user in self.users:
+            self.users.remove(user)
 
     def exit(self, user):
         self.removeUser(user)
 
-    def leaveRoom(self, user, roomname):
-        if roomname in self.rooms:
-            room = self.rooms[roomname]
-            user.socket.sendall(b'You have left the room: ' + roomname.encode())
+    def leaveRoom(self, user, roomName):
+        if roomName in self.rooms and roomName in user.rooms:
+            room = self.rooms[roomName]
+            user.socket.sendall(b'You have left the room: ' + roomName.encode())
+            user.rooms.pop(roomName)
             if room.removeUser(user) == 0:  # empty room now
-                self.rooms.pop(roomname)
+                self.rooms.pop(roomName)
+        else:
+            user.socket.sendall(b'You are not in this room...')
 
     def roomCommand(self, user, msgArr):
         for roomName in msgArr[1:]:
@@ -91,7 +94,7 @@ class Lobby:
                 self.rooms[roomName] = newRoom
                 user.addRoom(roomName)
                 user.socket.sendall(b'Room Creation Successful! Use "$chat roomname" to talk in here!')
-
+        user.socket.sendall(b'\n')
     # creates a new user
     def newUser(self, user, username):
         for x in self.users:
@@ -135,17 +138,30 @@ class Lobby:
                         if char == '~':
                             tildeCount = tildeCount + 1
 
+        first = True 
         if tildeCount == 6:
-            first = True
             for x in msgArr[startMsg:]:
                 if first == True:
                     yap = x
                     first = False
                 else:
                     yap = yap + " " + x
-            yap = yap.replace('~~~', ' ')
-            yap = yap.strip()
+            yapArr = re.findall("~~~(.*?)~~~", yap) 
+            first = True
+            yap = yapArr[0]
         return yap
+        '''
+        print("yap1: " +  yap)
+        yapArr = re.findall("~~~(.*?)~~~", yap) 
+        first = False
+        new = ""
+
+        for word in yapArr:
+            if word != '~~~':
+                if 
+        print("yap3: ")
+        print(test)
+        return yap '''
 
 
     def yap(self, user, msgArr, msgLen):
@@ -166,87 +182,117 @@ class Lobby:
         if not success:
             self.invalidCommand(user)
 
+    def sendFile(self, msg, sender):
+        msgArr = msg.split(" ", 4)
+        msgArr = msgArr[2].split("\n")
+        # msgArr = self.formatMsg(msgArr)
+        print(msgArr)
+        receiverName = msgArr[0]
+        success = False
+        for curr in self.users:
+            if receiverName == '':
+                break
+            if receiverName == curr.name:
+                msg = sender.name  + " " + msg
+                curr.socket.sendall(msg.encode())
+                sender.socket.sendall(b'File transfer successful')
+                success = True
+        if success == False:
+            sender.socket.sendall(b'File transfer unsuccessful, user does not exist')
+        
+    def formatMsg(self, msgArr):
+        while("" in msgArr):
+            msgArr.remove("")
+        return msgArr
+
+    def chatCommand(self, user, roomName): 
+        if roomName in self.rooms and roomName in user.rooms:
+            user.rooms[roomName] = True
+            user.socket.sendall(b'You are now able to chat in the desired room')
+        else:
+            tStr = "The room " + roomName + " is not yet created. Or you're not in there. Use $room!"
+            user.socket.sendall(tStr.encode()) 
 
     def handle(self, user, msg):
-        msg = msg.rsplit('\n')
-        msg = msg[0]
-        msgLen = len(re.findall(r'\w+', msg))  # returns an int
-        msgArr = msg.split(" ")   # returns a list
-        commandLen = len(msgArr[0])  # length of "$usersommand"
-        print("command length = " + str(commandLen))
-        print("msg length = " + str(msgLen))
-        if "$newuser" in msg:
-            if msgLen == 2 and self.newUser(user, msgArr[1]) == 1:
-                print("user joined")
-            else:
-                user.socket.sendall(b'Username setting unsuccessful. Connect Again!')
+        #check for file transfers first 
+        if "$file" in msg:
+            self.sendFile(msg, user)
+        else:
+            msg = msg.rsplit('\n')
+            msg = msg[0]
+            msgLen = len(re.findall(r'\w+', msg))  # returns an int
+            msgArr = msg.split(" ")   # returns a list
+            commandLen = len(msgArr[0])  # length of "$usersommand"
+            msgArr = self.formatMsg(msgArr)
+            print("msg arr  =  ")
+            print(msgArr)
+            print("command length = " + str(commandLen))
+            print("msg length = " + str(msgLen))
+            if "$newuser" in msg:
+                if msgLen == 2 and self.newUser(user, msgArr[1]) == 1:
+                    print("user joined")
+                else:
+                    user.socket.sendall(b'Username setting unsuccessful. Connect Again!')
 
-        elif "$commands" in msg and commandLen == 9:
-            user.socket.sendall(COMMANDS.encode())
+            elif "$commands" in msg and commandLen == 9:
+                user.socket.sendall(COMMANDS.encode())
 
-        elif "$lobby" in msg and commandLen == 6:
-            if msgLen == 1:
-                self.listRooms(user)
-            else:
-                self.invalidCommand(user)
-
-        elif "$msg" in msg and commandLen == 4:
-            if msgLen >= 3:
-                self.privateMessage(user, msgArr)
-            else:
-                user.socket.sendall(b'private messaging failed, invalid argument count')
-
-        elif "$room" in msg and commandLen == 5: # cases : no room, existing room, existing room and user is already in there
-            if msgLen >= 2:  # argument check
-                self.roomCommand(user, msgArr)
-            else:
-                user.socket.sendall(b'Room Join/Create failed. Try Again.')
-
-        elif "$yap" in msg and commandLen == 4:
-            self.yap(user, msgArr, msgLen)
-
-        elif "$leave" in msg and commandLen == 6:
-            if msgLen == 2:
-                self.leaveRoom(user, msgArr[1])
-            else:
-                self.invalidCommand(user)
-
-        elif "$members" in msg and commandLen == 8:
-            if msgLen == 2:
-                roomName = msgArr[1]
-                if roomName in self.rooms:
-                    room = self.rooms[roomName]
-                    room.printMembers(user)
+            elif "$lobby" in msg and commandLen == 6:
+                if msgLen == 1:
+                    self.listRooms(user)
                 else:
                     self.invalidCommand(user)
-            else:
-                self.invalidCommand(user)
 
-        elif "$chat" in msg and commandLen == 5 and msgLen == 2 :  
-            for roomName in msgArr:
-                if roomName in self.rooms:
-                    if roomName in user.rooms:
-                        user.rooms[roomName] = True
-                        user.socket.sendall(b'You are now able to chat in the desired room')
-                    else:
-                        tStr = "The room " + roomName + " is not yet created. Or you're not in there. Use $room!"
-                        user.socket.sendall(tStr.encode())
+            elif "$msg" in msg and commandLen == 4:
+                if msgLen >= 3:
+                    self.privateMessage(user, msgArr)
+                else:
+                    user.socket.sendall(b'private messaging failed, invalid argument count')
 
-        elif "$exit" in msg and commandLen == 5:
-            if msgLen == 1:
-                self.exit(user)
-            else:
-                self.invalidCommand(user)
+            elif "$room" in msg and commandLen == 5: # cases : no room, existing room, existing room and user is already in there
+                if msgLen >= 2:  # argument check
+                    self.roomCommand(user, msgArr)
+                else:
+                    user.socket.sendall(b'Room Join/Create failed. Try Again.')
 
-        else:
-            if len(self.rooms) == 0:  # no rooms
-                self.invalidCommand(user)
-            else:
-                success = False
-                for i in user.rooms:  # loop through the rooms that the user is in
-                    if user.rooms.get(i):  # the user is actively chatting in this room
-                        room = self.rooms.get(i)
-                        room.broadcast(user, msg)
-                        success = True
-                if success == False:
+            elif "$yap" in msg and commandLen == 4:
+                self.yap(user, msgArr, msgLen)
+
+            elif "$leave" in msg and commandLen == 6:
+                if msgLen == 2:
+                    self.leaveRoom(user, msgArr[1])
+                else:
                     self.invalidCommand(user)
+
+            elif "$members" in msg and commandLen == 8:
+                if msgLen == 2:
+                    roomName = msgArr[1]
+                    if roomName in self.rooms:
+                        room = self.rooms[roomName]
+                        room.printMembers(user)
+                    else:
+                        self.invalidCommand(user)
+                else:
+                    self.invalidCommand(user)
+
+            elif "$chat" in msg and commandLen == 5 and msgLen == 2 :  
+                self.chatCommand(user, msgArr[1])
+
+            elif "$exit" in msg and commandLen == 5:
+                if msgLen == 1:
+                    self.exit(user)
+                else:
+                    self.invalidCommand(user)
+
+            else:
+                if len(self.rooms) == 0:  # no rooms
+                    self.invalidCommand(user)
+                else:
+                    success = False
+                    for i in user.rooms:  # loop through the rooms that the user is in
+                        if user.rooms.get(i) and msg[0] != '$':  # the user is actively chatting in this room
+                            room = self.rooms.get(i)
+                            room.broadcast(user, msg)
+                            success = True
+                    if success == False:
+                        self.invalidCommand(user)
